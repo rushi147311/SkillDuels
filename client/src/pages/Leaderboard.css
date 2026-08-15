@@ -1,0 +1,420 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #070812;
+}
+
+.leaderboard-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 50% 10%, rgba(113, 60, 255, 0.22), transparent 30%),
+    radial-gradient(circle at 15% 50%, rgba(0, 149, 255, 0.1), transparent 25%),
+    #070812;
+  color: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  padding-bottom: 50px;
+}
+
+/* NAVBAR */
+
+.game-navbar {
+  height: 70px;
+  padding: 0 7%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(9, 10, 24, 0.9);
+  border-bottom: 1px solid rgba(142, 92, 255, 0.25);
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.logo span {
+  color: #8f5cff;
+}
+
+.nav-player {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #a98aff;
+}
+
+.player-avatar,
+.mini-avatar,
+.podium-avatar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 800;
+  background: linear-gradient(135deg, #6c3cff, #168cff);
+  box-shadow: 0 0 20px rgba(108, 60, 255, 0.4);
+}
+
+.player-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+}
+
+/* HERO */
+
+.hero-section {
+  text-align: center;
+  padding: 45px 20px 15px;
+}
+
+.trophy {
+  font-size: 45px;
+  filter: drop-shadow(0 0 15px rgba(255, 204, 0, 0.45));
+}
+
+.hero-section h1 {
+  margin: 10px 0 7px;
+  font-size: 42px;
+  letter-spacing: 4px;
+  background: linear-gradient(90deg, #a67cff, #45a3ff);
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.hero-section p {
+  margin: 0;
+  color: #8f91a8;
+}
+
+/* PODIUM */
+
+.podium {
+  max-width: 680px;
+  margin: 30px auto 40px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 18px;
+}
+
+.podium-player {
+  width: 180px;
+  text-align: center;
+  position: relative;
+}
+
+.podium-player h3 {
+  margin: 9px 0 4px;
+  font-size: 17px;
+}
+
+.podium-player p {
+  margin: 0 0 10px;
+  color: #a98aff;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.medal {
+  font-size: 25px;
+  margin-bottom: 7px;
+}
+
+.crown {
+  position: absolute;
+  top: -34px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 27px;
+}
+
+.podium-avatar {
+  width: 65px;
+  height: 65px;
+  margin: auto;
+  border-radius: 50%;
+  border: 2px solid #8e63ff;
+  font-size: 22px;
+}
+
+.first .podium-avatar {
+  width: 78px;
+  height: 78px;
+  border-color: #ffd447;
+  box-shadow: 0 0 25px rgba(255, 212, 71, 0.3);
+}
+
+.podium-block {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 5px;
+  border: 1px solid rgba(137, 89, 255, 0.4);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  background: linear-gradient(
+    180deg,
+    rgba(109, 63, 255, 0.28),
+    rgba(17, 18, 40, 0.65)
+  );
+  font-size: 25px;
+  font-weight: 900;
+  color: #9b75ff;
+}
+
+.first .podium-block {
+  height: 85px;
+}
+
+.second .podium-block {
+  height: 60px;
+}
+
+.third .podium-block {
+  height: 45px;
+}
+
+/* YOUR RANK */
+
+.your-rank {
+  max-width: 900px;
+  margin: 0 auto 25px;
+  padding: 20px 25px;
+  border: 1px solid rgba(125, 82, 255, 0.55);
+  border-radius: 14px;
+  background: linear-gradient(
+    90deg,
+    rgba(94, 52, 220, 0.2),
+    rgba(16, 17, 39, 0.8)
+  );
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 0 25px rgba(95, 53, 220, 0.1);
+}
+
+.small-label {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #9875ff;
+  font-weight: bold;
+}
+
+.your-rank h2 {
+  margin: 5px 0 0;
+}
+
+.your-stats {
+  display: flex;
+  gap: 40px;
+}
+
+.your-stats div {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.your-stats span,
+.wins span {
+  color: #73758b;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.your-stats strong {
+  margin-top: 4px;
+  color: #b398ff;
+}
+
+/* GLOBAL RANKINGS */
+
+.rankings-section {
+  max-width: 900px;
+  margin: auto;
+}
+
+.rankings-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.rankings-title h2 {
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+
+.rankings-title span {
+  color: #626478;
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+
+.ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.ranking-row {
+  min-height: 74px;
+  padding: 12px 18px;
+  display: grid;
+  grid-template-columns: 55px 48px 1fr 70px 95px;
+  gap: 12px;
+  align-items: center;
+  background: rgba(17, 18, 38, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  transition: 0.2s ease;
+}
+
+.ranking-row:hover {
+  transform: translateY(-2px);
+  border-color: rgba(131, 86, 255, 0.5);
+  background: rgba(24, 22, 52, 0.95);
+}
+
+.current-player {
+  border-color: rgba(137, 88, 255, 0.6);
+  background: rgba(81, 49, 170, 0.16);
+}
+
+.rank-number {
+  font-size: 20px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.mini-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.player-info {
+  min-width: 0;
+}
+
+.player-name-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+
+.player-name-row span {
+  font-size: 10px;
+  color: #7d7f95;
+}
+
+.xp-bar {
+  height: 5px;
+  background: #27283b;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.xp-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #7045ff, #2e9cff);
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(94, 99, 255, 0.6);
+}
+
+.wins {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.wins strong {
+  margin-top: 3px;
+}
+
+.xp {
+  text-align: right;
+  color: #a887ff;
+}
+
+.xp span {
+  font-size: 11px;
+}
+
+/* FOOTER */
+
+.footer-text {
+  text-align: center;
+  color: #626478;
+  font-size: 12px;
+  margin-top: 30px;
+}
+
+/* MOBILE */
+
+@media (max-width: 700px) {
+  .game-navbar {
+    padding: 0 20px;
+  }
+
+  .hero-section h1 {
+    font-size: 29px;
+  }
+
+  .podium {
+    padding: 0 10px;
+    gap: 7px;
+  }
+
+  .podium-player {
+    width: 31%;
+  }
+
+  .podium-avatar {
+    width: 52px;
+    height: 52px;
+  }
+
+  .first .podium-avatar {
+    width: 62px;
+    height: 62px;
+  }
+
+  .your-rank,
+  .rankings-section {
+    margin-left: 15px;
+    margin-right: 15px;
+  }
+
+  .your-rank {
+    align-items: flex-start;
+    gap: 20px;
+    flex-direction: column;
+  }
+
+  .your-stats {
+    width: 100%;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .ranking-row {
+    grid-template-columns: 40px 40px 1fr 70px;
+    padding: 12px 10px;
+  }
+
+  .wins {
+    display: none;
+  }
+
+  .xp {
+    font-size: 13px;
+  }
+}
