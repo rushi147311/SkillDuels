@@ -5,6 +5,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
+const quizRoutes = require("./routes/quizRoutes"); 
 
 dotenv.config();
 
@@ -27,11 +28,18 @@ app.get("/", (req, res) => {
     message: "SkillDuels API is running",
   });
 });
-
 app.use("/api/auth", authRoutes);
-
+app.use("/api/quiz", quizRoutes); 
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
+  socket.on("join_match_room", (roomCode) => {
+    socket.join(roomCode);
+    console.log(`User ${socket.id} joined match room: ${roomCode}`);
+  });
+  socket.on("submit_live_answer", (data) => {
+    const { roomCode, score, playerId } = data;
+    socket.to(roomCode).emit("opponent_score_update", { playerId, score });
+  });
 
   socket.on("disconnect", () => {
     console.log(`User disconnected: ${socket.id}`);
