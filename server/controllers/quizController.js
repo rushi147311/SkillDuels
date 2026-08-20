@@ -1,4 +1,3 @@
-const mongoose = require('mongoose');
 const Question = require('../models/Question');
 const Match = require('../models/Match');
 const crypto = require('crypto');
@@ -12,21 +11,24 @@ const shuffleArray = (array) => {
   return arr;
 };
 
+const shuffleQuestion = (question) => {
+  const questionData = typeof question.toObject === 'function' ? question.toObject() : { ...question };
+  questionData.options = shuffleArray(questionData.options);
+  return questionData;
+};
+
+const prepareQuestions = (questions) => shuffleArray(questions).map(shuffleQuestion);
+
+const prepareMatch = (match) => {
+  const matchData = match.toObject();
+  matchData.questions = prepareQuestions(matchData.questions);
+  return matchData;
+};
+
 const getQuestionsByCategory = async (req, res) => {
   try {
-    const { categoryId } = req.params;
-
-    const query = {
-      $or: [
-        { category: categoryId },
-      ],
-    };
-
-    if (mongoose.Types.ObjectId.isValid(categoryId)) {
-      query.$or.push({ category: new mongoose.Types.ObjectId(categoryId) });
-    }
-
-    const questions = await Question.find(query);
+    const categoryName = (req.params.categoryName || '').trim();
+    const questions = await Question.find({ categoryName });
 
     if (!questions || questions.length === 0) {
       return res.status(404).json({
@@ -35,7 +37,7 @@ const getQuestionsByCategory = async (req, res) => {
       });
     }
 
-    res.status(200).json({ success: true, count: questions.length, data: questions });
+    res.status(200).json({ success: true, count: questions.length, data: prepareQuestions(questions) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -43,13 +45,14 @@ const getQuestionsByCategory = async (req, res) => {
 
 const createRoom = async (req, res) => {
   try {
-    const { playerId, categoryId, roomType } = req.body; 
+    const { playerId, categoryName, roomType } = req.body;
+    const normalizedCategoryName = (categoryName || '').trim();
 
-    if (!playerId || !categoryId || !roomType) {
-      return res.status(400).json({ success: false, message: 'Please provide player ID, category ID, and room type' });
+    if (!playerId || !normalizedCategoryName || !roomType) {
+      return res.status(400).json({ success: false, message: 'Please provide player ID, category name, and room type' });
     }
 
-    const questions = await Question.find({ category: categoryId });
+    const questions = await Question.find({ categoryName: normalizedCategoryName });
     
     if (questions.length < 3) {
       return res.status(400).json({ success: false, message: 'Not enough questions in this category to start a match' });
@@ -61,7 +64,7 @@ const createRoom = async (req, res) => {
 
     if (roomType === 'public') {
       let existingPublicMatch = await Match.findOne({
-        category: categoryId,
+        categoryName: normalizedCategoryName,
         roomType: 'public',
         status: 'Pending',
         'players.1': { $exists: false } 
@@ -80,7 +83,7 @@ const createRoom = async (req, res) => {
           .populate('players', 'username')
           .populate('questions');
 
-        return res.status(200).json({ success: true, message: 'Joined public match successfully', data: populatedMatch });
+        return res.status(200).json({ success: true, message: 'Joined public match successfully', data: prepareMatch(populatedMatch) });
       }
     }
 
@@ -88,14 +91,18 @@ const createRoom = async (req, res) => {
 
     const match = await Match.create({
       roomCode,
-      category: categoryId,
+      categoryName: normalizedCategoryName,
       roomType,
       players: [playerId],
       questions: selectedQuestions,
       status: 'Pending',
     });
 
-    res.status(201).json({ success: true, roomCode: match.roomCode, data: match });
+    const populatedMatch = await Match.findById(match._id)
+      .populate('players', 'username')
+      .populate('questions');
+
+    res.status(201).json({ success: true, roomCode: match.roomCode, data: prepareMatch(populatedMatch) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -135,7 +142,21 @@ const joinRoom = async (req, res) => {
       .populate('players', 'username')
       .populate('questions');
 
-    res.status(200).json({ success: true, data: populatedMatch });
+    res.status(200).json({ success: true, data: prepareMatch(populatedMatch) });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+const getRoomStatus = async (req, res) => {
+  try {
+    const match = await Match.findOne({ roomCode: req.params.roomCode.toUpperCase() })
+      .populate('players', 'username')
+      .populate('questions');
+
+    if (!match) return res.status(404).json({ success: false, message: 'Room not found' });
+
+    res.status(200).json({ success: true, data: prepareMatch(match) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -163,14 +184,17 @@ const submitMatchScore = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Player not part of this match' });
     }
 
-    match.status = 'Completed';
-    
-    if (match.scores.player1Score > match.scores.player2Score) {
-      match.winner = match.players[0];
-    } else if (match.scores.player2Score > match.scores.player1Score) {
-      match.winner = match.players[1];
-    } else {
-      match.winner = null; 
+    const bothPlayersSubmitted = match.scores.player1Score !== null && match.scores.player2Score !== null;
+    if (bothPlayersSubmitted) {
+      match.status = 'Completed';
+
+      if (match.scores.player1Score > match.scores.player2Score) {
+        match.winner = match.players[0];
+      } else if (match.scores.player2Score > match.scores.player1Score) {
+        match.winner = match.players[1];
+      } else {
+        match.winner = null;
+      }
     }
 
     await match.save();
@@ -181,4 +205,4 @@ const submitMatchScore = async (req, res) => {
   }
 };
 
-module.exports = {getQuestionsByCategory, createRoom, joinRoom, submitMatchScore};
+module.exports = {getQuestionsByCategory, createRoom, joinRoom, getRoomStatus, submitMatchScore};

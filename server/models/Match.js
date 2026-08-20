@@ -23,11 +23,11 @@ const matchSchema = new mongoose.Schema(
     scores: {
       player1Score: {
         type: Number,
-        default: 0,
+        default: null,
       },
       player2Score: {
         type: Number,
-        default: 0,
+        default: null,
       },
     },
     status: {
@@ -40,9 +40,14 @@ const matchSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
     },
+    categoryName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     category: {
       type: mongoose.Schema.Types.Mixed,
-      required: true,
+      default: null,
     },
     roomType: {
       type: String,

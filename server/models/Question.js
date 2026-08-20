@@ -2,9 +2,15 @@ const mongoose = require('mongoose');
 
 const questionSchema = new mongoose.Schema(
   {
+    categoryName: {
+      type: String,
+      required: true,
+      trim: true,
+      index: true,
+    },
     category: {
       type: mongoose.Schema.Types.Mixed,
-      required: true,
+      default: null,
     },
     questionText: {
       type: String,
