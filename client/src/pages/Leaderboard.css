@@ -4,16 +4,15 @@
 
 body {
   margin: 0;
-  background: #070812;
+  background: #f4f8ff;
 }
 
 .leaderboard-page {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 50% 10%, rgba(113, 60, 255, 0.22), transparent 30%),
-    radial-gradient(circle at 15% 50%, rgba(0, 149, 255, 0.1), transparent 25%),
-    #070812;
-  color: #ffffff;
+    radial-gradient(circle at 50% 5%, rgba(37, 99, 235, 0.12), transparent 28%),
+    linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%);
+  color: #1e293b;
   font-family: Arial, Helvetica, sans-serif;
   padding-bottom: 50px;
 }
@@ -26,18 +25,20 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(9, 10, 24, 0.9);
-  border-bottom: 1px solid rgba(142, 92, 255, 0.25);
+  background: #ffffff;
+  border-bottom: 1px solid #dbeafe;
+  box-shadow: 0 2px 12px rgba(37, 99, 235, 0.08);
 }
 
 .logo {
   font-size: 22px;
   font-weight: 900;
   letter-spacing: 1px;
+  color: #0f172a;
 }
 
 .logo span {
-  color: #8f5cff;
+  color: #2563eb;
 }
 
 .nav-player {
@@ -46,7 +47,7 @@ body {
   gap: 12px;
   font-size: 12px;
   font-weight: bold;
-  color: #a98aff;
+  color: #2563eb;
 }
 
 .player-avatar,
@@ -56,8 +57,9 @@ body {
   justify-content: center;
   align-items: center;
   font-weight: 800;
-  background: linear-gradient(135deg, #6c3cff, #168cff);
-  box-shadow: 0 0 20px rgba(108, 60, 255, 0.4);
+  color: white;
+  background: linear-gradient(135deg, #2563eb, #38bdf8);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
 }
 
 .player-avatar {
@@ -75,21 +77,19 @@ body {
 
 .trophy {
   font-size: 45px;
-  filter: drop-shadow(0 0 15px rgba(255, 204, 0, 0.45));
+  filter: drop-shadow(0 4px 10px rgba(245, 158, 11, 0.2));
 }
 
 .hero-section h1 {
   margin: 10px 0 7px;
   font-size: 42px;
   letter-spacing: 4px;
-  background: linear-gradient(90deg, #a67cff, #45a3ff);
-  -webkit-background-clip: text;
-  color: transparent;
+  color: #1d4ed8;
 }
 
 .hero-section p {
   margin: 0;
-  color: #8f91a8;
+  color: #64748b;
 }
 
 /* PODIUM */
@@ -112,11 +112,12 @@ body {
 .podium-player h3 {
   margin: 9px 0 4px;
   font-size: 17px;
+  color: #0f172a;
 }
 
 .podium-player p {
   margin: 0 0 10px;
-  color: #a98aff;
+  color: #2563eb;
   font-weight: bold;
   font-size: 13px;
 }
@@ -139,15 +140,15 @@ body {
   height: 65px;
   margin: auto;
   border-radius: 50%;
-  border: 2px solid #8e63ff;
+  border: 3px solid #60a5fa;
   font-size: 22px;
 }
 
 .first .podium-avatar {
   width: 78px;
   height: 78px;
-  border-color: #ffd447;
-  box-shadow: 0 0 25px rgba(255, 212, 71, 0.3);
+  border-color: #fbbf24;
+  box-shadow: 0 5px 18px rgba(251, 191, 36, 0.25);
 }
 
 .podium-block {
@@ -155,17 +156,14 @@ body {
   justify-content: center;
   align-items: center;
   margin-top: 5px;
-  border: 1px solid rgba(137, 89, 255, 0.4);
+  border: 1px solid #bfdbfe;
   border-bottom: none;
-  border-radius: 10px 10px 0 0;
-  background: linear-gradient(
-    180deg,
-    rgba(109, 63, 255, 0.28),
-    rgba(17, 18, 40, 0.65)
-  );
+  border-radius: 12px 12px 0 0;
+  background: linear-gradient(180deg, #dbeafe, #ffffff);
   font-size: 25px;
   font-weight: 900;
-  color: #9b75ff;
+  color: #2563eb;
+  box-shadow: 0 -4px 12px rgba(37, 99, 235, 0.05);
 }
 
 .first .podium-block {
@@ -186,28 +184,25 @@ body {
   max-width: 900px;
   margin: 0 auto 25px;
   padding: 20px 25px;
-  border: 1px solid rgba(125, 82, 255, 0.55);
+  border: 1px solid #93c5fd;
   border-radius: 14px;
-  background: linear-gradient(
-    90deg,
-    rgba(94, 52, 220, 0.2),
-    rgba(16, 17, 39, 0.8)
-  );
+  background: linear-gradient(90deg, #eff6ff, #ffffff);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 0 25px rgba(95, 53, 220, 0.1);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.08);
 }
 
 .small-label {
   font-size: 11px;
   letter-spacing: 2px;
-  color: #9875ff;
+  color: #2563eb;
   font-weight: bold;
 }
 
 .your-rank h2 {
   margin: 5px 0 0;
+  color: #0f172a;
 }
 
 .your-stats {
@@ -223,14 +218,14 @@ body {
 
 .your-stats span,
 .wins span {
-  color: #73758b;
+  color: #64748b;
   font-size: 10px;
   letter-spacing: 1px;
 }
 
 .your-stats strong {
   margin-top: 4px;
-  color: #b398ff;
+  color: #2563eb;
 }
 
 /* GLOBAL RANKINGS */
@@ -250,10 +245,11 @@ body {
 .rankings-title h2 {
   font-size: 16px;
   letter-spacing: 1px;
+  color: #1e3a8a;
 }
 
 .rankings-title span {
-  color: #626478;
+  color: #94a3b8;
   font-size: 10px;
   letter-spacing: 2px;
 }
@@ -271,21 +267,22 @@ body {
   grid-template-columns: 55px 48px 1fr 70px 95px;
   gap: 12px;
   align-items: center;
-  background: rgba(17, 18, 38, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: #ffffff;
+  border: 1px solid #dbeafe;
   border-radius: 12px;
   transition: 0.2s ease;
+  box-shadow: 0 3px 12px rgba(37, 99, 235, 0.05);
 }
 
 .ranking-row:hover {
   transform: translateY(-2px);
-  border-color: rgba(131, 86, 255, 0.5);
-  background: rgba(24, 22, 52, 0.95);
+  border-color: #60a5fa;
+  box-shadow: 0 7px 20px rgba(37, 99, 235, 0.12);
 }
 
 .current-player {
-  border-color: rgba(137, 88, 255, 0.6);
-  background: rgba(81, 49, 170, 0.16);
+  border-color: #3b82f6;
+  background: #eff6ff;
 }
 
 .rank-number {
@@ -310,23 +307,27 @@ body {
   margin-bottom: 9px;
 }
 
+.player-name-row strong {
+  color: #0f172a;
+}
+
 .player-name-row span {
   font-size: 10px;
-  color: #7d7f95;
+  color: #64748b;
 }
 
 .xp-bar {
-  height: 5px;
-  background: #27283b;
+  height: 6px;
+  background: #dbeafe;
   border-radius: 10px;
   overflow: hidden;
 }
 
 .xp-progress {
   height: 100%;
-  background: linear-gradient(90deg, #7045ff, #2e9cff);
+  background: linear-gradient(90deg, #2563eb, #38bdf8);
   border-radius: 10px;
-  box-shadow: 0 0 10px rgba(94, 99, 255, 0.6);
+  box-shadow: 0 0 8px rgba(37, 99, 235, 0.25);
 }
 
 .wins {
@@ -337,11 +338,12 @@ body {
 
 .wins strong {
   margin-top: 3px;
+  color: #0f172a;
 }
 
 .xp {
   text-align: right;
-  color: #a887ff;
+  color: #2563eb;
 }
 
 .xp span {
@@ -352,7 +354,7 @@ body {
 
 .footer-text {
   text-align: center;
-  color: #626478;
+  color: #64748b;
   font-size: 12px;
   margin-top: 30px;
 }
