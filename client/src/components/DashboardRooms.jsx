@@ -1,0 +1,3 @@
+export default function DashboardRooms({ rooms, onJoin }) {
+  return <section className="dashboard-panel dashboard-list-panel"><div className="dashboard-section-heading"><div><span className="dashboard-eyebrow">Live now</span><h2>Public rooms</h2></div><span className="heading-badge live-badge">{rooms.length} open</span></div><div className="room-list">{rooms.length ? rooms.map((room) => <div className="room-row" key={room.id}><div className="room-icon">⚡</div><div><strong>{room.categoryName}</strong><span>Hosted by {room.host}</span></div><button onClick={() => onJoin(room.roomCode)}>Join <span>→</span></button></div>) : <p className="empty-dashboard">No public rooms waiting right now.</p>}</div></section>;
+}
