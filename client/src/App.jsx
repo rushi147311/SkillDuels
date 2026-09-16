@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
 
 import QuizScreen from "./pages/QuizScreen";
@@ -6,6 +7,8 @@ import ResultScreen from "./pages/ResultScreen";
 import Dashboard from "./pages/Dashboard";
 import WaitingRoom from "./components/WaitingRoom";
 import Leaderboard from "./pages/Leaderboard";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 import {
   createRoom,
@@ -262,14 +265,30 @@ function GameContainer() {
   );
 }
 
-function App() {
-  const currentPath = window.location.pathname;
-
-  if (currentPath === "/leaderboard") {
-    return <Leaderboard />;
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem('skillDuelsToken');
+  if (!token) {
+    return <Navigate to="/login" replace />;
   }
+  return children;
+};
 
-  return <GameContainer />;
+function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/leaderboard" element={<Leaderboard />} />
+      <Route 
+        path="/" 
+        element={
+          <ProtectedRoute>
+            <GameContainer />
+          </ProtectedRoute>
+        } 
+      />
+    </Routes>
+  );
 }
 
 export default App;
