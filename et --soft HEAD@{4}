@@ -1,0 +1,18 @@
+[33m8483a27[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature/socket-kirjat[m[33m)[m HEAD@{0}: commit: Restore clean socket logic to server.js
+[33m2f78080[m[33m ([m[1;31morigin/feature/socket-kirjat[m[33m, [m[1;31morigin/feature/admin-ajay[m[33m)[m HEAD@{1}: checkout: moving from feature/socket-final-clean to feature/socket-kirjat
+[33m60cacf8[m[33m ([m[1;32mfeature/socket-final-clean[m[33m)[m HEAD@{2}: checkout: moving from 60cacf828f1752ce777377437e0c4f76845175be to feature/socket-final-clean
+[33m60cacf8[m[33m ([m[1;32mfeature/socket-final-clean[m[33m)[m HEAD@{3}: checkout: moving from feature/socket-kirjat to c34d727~1
+[33m2f78080[m[33m ([m[1;31morigin/feature/socket-kirjat[m[33m, [m[1;31morigin/feature/admin-ajay[m[33m)[m HEAD@{4}: reset: moving to origin/feature/socket-kirjat
+[33m2f78080[m[33m ([m[1;31morigin/feature/socket-kirjat[m[33m, [m[1;31morigin/feature/admin-ajay[m[33m)[m HEAD@{5}: reset: moving to HEAD
+[33m2f78080[m[33m ([m[1;31morigin/feature/socket-kirjat[m[33m, [m[1;31morigin/feature/admin-ajay[m[33m)[m HEAD@{6}: reset: moving to origin/feature/socket-kirjat
+[33mc34d727[m[33m ([m[1;31morigin/feature/auth-aditya[m[33m)[m HEAD@{7}: reset: moving to HEAD
+[33mc34d727[m[33m ([m[1;31morigin/feature/auth-aditya[m[33m)[m HEAD@{8}: reset: moving to HEAD
+[33mc34d727[m[33m ([m[1;31morigin/feature/auth-aditya[m[33m)[m HEAD@{9}: pull origin feature/auth-aditya: Fast-forward
+[33m2f78080[m[33m ([m[1;31morigin/feature/socket-kirjat[m[33m, [m[1;31morigin/feature/admin-ajay[m[33m)[m HEAD@{10}: reset: moving to HEAD
+[33m2f78080[m[33m ([m[1;31morigin/feature/socket-kirjat[m[33m, [m[1;31morigin/feature/admin-ajay[m[33m)[m HEAD@{11}: checkout: moving from feature/auth-aditya to feature/socket-kirjat
+[33m613b185[m[33m ([m[1;32mfeature/auth-aditya[m[33m)[m HEAD@{12}: commit: Merged server.js with auth and socket setup
+[33mcaa7aee[m HEAD@{13}: pull origin feature/auth-aditya: Fast-forward
+[33m2f78080[m[33m ([m[1;31morigin/feature/socket-kirjat[m[33m, [m[1;31morigin/feature/admin-ajay[m[33m)[m HEAD@{14}: reset: moving to HEAD
+[33m2f78080[m[33m ([m[1;31morigin/feature/socket-kirjat[m[33m, [m[1;31morigin/feature/admin-ajay[m[33m)[m HEAD@{15}: checkout: moving from feature/socket-kirjat to feature/auth-aditya
+[33m2f78080[m[33m ([m[1;31morigin/feature/socket-kirjat[m[33m, [m[1;31morigin/feature/admin-ajay[m[33m)[m HEAD@{16}: checkout: moving from main to feature/socket-kirjat
+[33m6ddf03f[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{17}: clone: from https://github.com/rushi147311/SkillDuels.git
