@@ -1,324 +1,333 @@
 import { useEffect, useState } from "react";
-import socket from "./socket/socket.js";
-import LiveGame from "./game/LiveGame.jsx";
+import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
 
-function App() {
-  const [joinRoomId, setJoinRoomId] = useState("");
-  const [currentRoom, setCurrentRoom] = useState("");
-  const [players, setPlayers] = useState([]);
-  const [status, setStatus] = useState("");
+import QuizScreen from "./pages/QuizScreen";
+import ResultScreen from "./pages/ResultScreen";
+import Dashboard from "./pages/Dashboard";
+import WaitingRoom from "./components/WaitingRoom";
+import Leaderboard from "./pages/Leaderboard";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+
+import {
+  createRoom,
+  getRoomStatus,
+  joinRoom,
+  submitScore,
+} from "./services/api";
+
+const getPlayerId = () => {
+  const savedId = window.localStorage.getItem("skillDuelsPlayerId");
+
+  if (savedId) return savedId;
+
+  const playerId = crypto.randomUUID().replaceAll("-", "").slice(0, 24);
+
+  window.localStorage.setItem("skillDuelsPlayerId", playerId);
+
+  return playerId;
+};
+
+const getSharedResult = () => {
+  const params = new URLSearchParams(window.location.search);
+
+  if (params.get("result") !== "1") return null;
+
+  const score = Number(params.get("score"));
+  const total = Number(params.get("total"));
+
+  if (!Number.isFinite(score) || !Number.isFinite(total) || total <= 0) {
+    return null;
+  }
+
+  return {
+    score,
+    total,
+    player: params.get("player") || "Champion",
+  };
+};
+
+function GameContainer() {
+  const [stage, setStage] = useState("quiz");
+  const [matchData, setMatchData] = useState(null);
+  const [waitingMatch, setWaitingMatch] = useState(null);
+  const [completedMatch, setCompletedMatch] = useState(null);
+  const [finalScore, setFinalScore] = useState(0);
   const [error, setError] = useState("");
-  const [gameStarted, setGameStarted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [sharedResult] = useState(getSharedResult);
+
+  const playerId = getPlayerId();
 
   useEffect(() => {
-    socket.on("room-created", (data) => {
-      setCurrentRoom(data.roomId);
-      setPlayers(data.players || []);
-      setStatus("Waiting for opponent...");
-      setError("");
-    });
+    const roomToPoll =
+      waitingMatch?.roomCode ||
+      (stage === "waiting" ? matchData?.roomCode : null);
 
-    socket.on("room-joined", (data) => {
-      setCurrentRoom(data.roomId);
-      setPlayers(data.players || []);
+    if (!roomToPoll) return undefined;
 
-      setStatus(
-        data.status === "ready"
-          ? "Room is ready!"
-          : "Waiting for opponent..."
-      );
+    const checkRoom = async () => {
+      try {
+        const response = await getRoomStatus(roomToPoll);
+        const latestMatch = response.data;
 
-      setError("");
-    });
-
-    socket.on("player-joined", (data) => {
-      setPlayers(data.players || []);
-
-      if (data.status === "ready") {
-        setStatus("Room is ready!");
+        if (waitingMatch && latestMatch.status === "In-Progress") {
+          setWaitingMatch(null);
+          setMatchData(latestMatch);
+          setStage("quiz");
+        } else if (
+          stage === "waiting" &&
+          latestMatch.status === "Completed"
+        ) {
+          setCompletedMatch(latestMatch);
+          setStage("result");
+        }
+      } catch (requestError) {
+        setError(requestError.message);
       }
-    });
-
-    socket.on("room-ready", (data) => {
-      setPlayers(data.players || []);
-      setStatus("Room is ready!");
-    });
-
-    socket.on("player-left", (data) => {
-      setPlayers(data.players || []);
-      setStatus("Waiting for opponent...");
-      setGameStarted(false);
-    });
-
-    socket.on("game-started", () => {
-      setGameStarted(true);
-    });
-
-    socket.on("room-error", (data) => {
-      setError(data.message);
-    });
-
-    return () => {
-      socket.off("room-created");
-      socket.off("room-joined");
-      socket.off("player-joined");
-      socket.off("room-ready");
-      socket.off("player-left");
-      socket.off("game-started");
-      socket.off("room-error");
     };
-  }, []);
 
-  const handleCreateRoom = () => {
-    setError("");
+    checkRoom();
 
-    const newRoomId = Math.random()
-      .toString(36)
-      .substring(2, 8)
-      .toUpperCase();
+    const interval = setInterval(checkRoom, 2000);
 
-    socket.emit("create-room", newRoomId);
-  };
+    return () => clearInterval(interval);
+  }, [matchData, stage, waitingMatch]);
 
-  const handleJoinRoom = () => {
-    setError("");
+  const startMatch = (response) => {
+    const match = response.data;
 
-    if (!joinRoomId.trim()) {
-      setError("Please enter a Room ID");
-      return;
+    if (!match?.questions?.length) {
+      throw new Error("This match has no questions yet");
     }
 
-    socket.emit(
-      "join-room",
-      joinRoomId.trim().toUpperCase()
-    );
+    if (match.status === "Pending") {
+      setWaitingMatch(match);
+    } else {
+      setMatchData(match);
+      setWaitingMatch(null);
+    }
   };
 
-  const handleStartGame = () => {
-    if (players.length !== 2) return;
+  const handleJoinRoom = async (roomCode) => {
+    setLoading(true);
+    setError("");
 
-    socket.emit("start-game", currentRoom);
+    try {
+      startMatch(
+        await joinRoom({
+          playerId,
+          roomCode: roomCode.trim(),
+        })
+      );
+    } catch (requestError) {
+      setError(requestError.message);
+      throw requestError;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // ---------------- LIVE GAME ----------------
-
-  if (gameStarted) {
+  if (waitingMatch && !matchData) {
     return (
-      <LiveGame
-        roomId={currentRoom}
-        players={players}
+      <WaitingRoom
+        roomCode={waitingMatch.roomCode}
+        message="Waiting for an opponent"
       />
     );
   }
 
-  // ---------------- CREATE / JOIN ----------------
-
-  if (!currentRoom) {
+  if (!matchData && !sharedResult) {
     return (
-      <div className="page">
-        <header className="top-header">
+      <Dashboard
+        playerId={playerId}
+        onJoinRoom={handleJoinRoom}
+        joinRoomLoading={loading}
+        joinRoomError={error}
+        onCreateRoom={async ({ categoryName, roomType }) => {
+          setLoading(true);
+          setError("");
+
+          try {
+            startMatch(
+              await createRoom({
+                playerId,
+                categoryName,
+                roomType,
+              })
+            );
+          } catch (requestError) {
+            setError(requestError.message);
+            throw requestError;
+          } finally {
+            setLoading(false);
+          }
+        }}
+        createRoomLoading={loading}
+        createRoomError={error}
+      />
+    );
+  }
+
+  if (!matchData && sharedResult) {
+    return (
+      <div className="duel-app quiz-page">
+        <header className="topbar">
           <div className="brand">
-            <span className="brand-icon">⚡</span>
+            <span className="brand-mark">⚡</span>
             Skill<span>Duels</span>
           </div>
 
-          <div className="header-badge">
-            LIVE COMPETITION
+          <div className="live-pill">
+            <span />
+            Shared result
           </div>
         </header>
 
-        <main className="home-container">
-          <div className="hero-section">
-            <p className="eyebrow">REAL-TIME QUIZ BATTLE</p>
-
-            <h1>
-              Challenge.
-              <br />
-              <span>Compete. Win.</span>
-            </h1>
-
-            <p className="hero-text">
-              Create a private room or join your opponent
-              and prove your skills in a live match.
-            </p>
-          </div>
-
-          <div className="room-card create-card">
-            <div className="card-icon">🎮</div>
-
-            <h2>Start a Duel</h2>
-
-            <p className="card-description">
-              Create a room and invite your opponent.
-            </p>
-
-            <button
-              className="primary-button"
-              onClick={handleCreateRoom}
-            >
-              Create Room
-              <span>→</span>
-            </button>
-
-            <div className="divider">
-              <span>OR</span>
-            </div>
-
-            <input
-              type="text"
-              placeholder="Enter Room ID"
-              value={joinRoomId}
-              onChange={(e) =>
-                setJoinRoomId(e.target.value.toUpperCase())
-              }
-            />
-
-            <button
-              className="secondary-button"
-              onClick={handleJoinRoom}
-            >
-              Join Room
-            </button>
-
-            {error && (
-              <div className="error-box">
-                ⚠ {error}
-              </div>
-            )}
-          </div>
-        </main>
+        <ResultScreen
+          finalScore={sharedResult.score}
+          totalPossible={sharedResult.total}
+          playerName={sharedResult.player}
+          onRestart={() => {
+            window.location.href = window.location.origin;
+          }}
+        />
       </div>
     );
   }
 
-  // ---------------- WAITING ROOM ----------------
+  const handleFinish = async (score) => {
+    setFinalScore(score);
+
+    try {
+      const response = await submitScore({
+        matchId: matchData._id,
+        playerId,
+        score,
+      });
+
+      if (response.data.status === "Completed") {
+        setCompletedMatch(response.data);
+        setStage("result");
+      } else {
+        setStage("waiting");
+      }
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  };
 
   return (
-    <div className="page">
-      <header className="top-header">
-        <div className="brand">
-          <span className="brand-icon">⚡</span>
-          Skill<span>Duels</span>
+    <>
+      <section id="center">
+        <div className="hero">
+          <img src={heroImg} className="base" width="170" height="179" alt="" />
+          <img src={reactLogo} className="framework" alt="React logo" />
+          <img src={viteLogo} className="vite" alt="Vite logo" />
         </div>
-
-        <div className="header-badge">
-          LIVE MATCH
-        </div>
-      </header>
-
-      <main className="waiting-page">
-
-        <div className="waiting-heading">
-          <p className="eyebrow">MATCHMAKING</p>
-
-          <h1>Waiting Room</h1>
-
+        <div>
+          <h1>Get started</h1>
           <p>
-            Get ready. Your opponent is joining the duel.
+            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
           </p>
         </div>
+        <button
+          type="button"
+          className="counter"
+          onClick={() => setCount((count) => count + 1)}
+        >
+          Count is {count}
+        </button>
+      </section>
 
-        <div className="waiting-card">
+      <div className="ticks"></div>
 
-          <div className="room-label">
-            ROOM ID
-          </div>
-
-          <div className="room-id-large">
-            {currentRoom}
-          </div>
-
-          <div className="status-pill">
-            <span className="status-dot"></span>
-            {status}
-          </div>
-
-          <div className="players-section">
-
-            <div className="players-header">
-              <h3>Players</h3>
-
-              <span>
-                {players.length}/2
-              </span>
-            </div>
-
-            <div className="player-list">
-
-              {players.map((player, index) => (
-                <div
-                  className="player-card"
-                  key={player}
-                >
-                  <div className="player-avatar">
-                    {index === 0 ? "👤" : "⚔️"}
-                  </div>
-
-                  <div className="player-info">
-                    <strong>
-                      Player {index + 1}
-                    </strong>
-
-                    <small>
-                      {index === 0
-                        ? "Room Creator"
-                        : "Opponent"}
-                    </small>
-                  </div>
-
-                  <div className="connected">
-                    ● Connected
-                  </div>
-                </div>
-              ))}
-
-              {players.length < 2 && (
-                <div className="empty-player">
-                  <div className="loading-circle"></div>
-
-                  <div>
-                    <strong>
-                      Waiting for opponent
-                    </strong>
-
-                    <small>
-                      Share the Room ID with your opponent
-                    </small>
-                  </div>
-                </div>
-              )}
-
-            </div>
-          </div>
-
-          {players.length === 2 ? (
-            <button
-              className="start-button"
-              onClick={handleStartGame}
-            >
-              Start Game
-              <span>⚡</span>
-            </button>
-          ) : (
-            <button
-              className="start-button disabled"
-              disabled
-            >
-              Waiting for opponent...
-            </button>
-          )}
-
-          {error && (
-            <div className="error-box">
-              ⚠ {error}
-            </div>
-          )}
-
+      <section id="next-steps">
+        <div id="docs">
+          <svg className="icon" role="presentation" aria-hidden="true">
+            <use href="/icons.svg#documentation-icon"></use>
+          </svg>
+          <h2>Documentation</h2>
+          <p>Your questions, answered</p>
+          <ul>
+            <li>
+              <a href="https://vite.dev/" target="_blank">
+                <img className="logo" src={viteLogo} alt="" />
+                Explore Vite
+              </a>
+            </li>
+            <li>
+              <a href="https://react.dev/" target="_blank">
+                <img className="button-icon" src={reactLogo} alt="" />
+                Learn more
+              </a>
+            </li>
+          </ul>
         </div>
-      </main>
-    </div>
-  );
+        <div id="social">
+          <svg className="icon" role="presentation" aria-hidden="true">
+            <use href="/icons.svg#social-icon"></use>
+          </svg>
+          <h2>Connect with us</h2>
+          <p>Join the Vite community</p>
+          <ul>
+            <li>
+              <a href="https://github.com/vitejs/vite" target="_blank">
+                <svg
+                  className="button-icon"
+                  role="presentation"
+                  aria-hidden="true"
+                >
+                  <use href="/icons.svg#github-icon"></use>
+                </svg>
+                GitHub
+              </a>
+            </li>
+            <li>
+              <a href="https://chat.vite.dev/" target="_blank">
+                <svg
+                  className="button-icon"
+                  role="presentation"
+                  aria-hidden="true"
+                >
+                  <use href="/icons.svg#discord-icon"></use>
+                </svg>
+                Discord
+              </a>
+            </li>
+            <li>
+              <a href="https://x.com/vite_js" target="_blank">
+                <svg
+                  className="button-icon"
+                  role="presentation"
+                  aria-hidden="true"
+                >
+                  <use href="/icons.svg#x-icon"></use>
+                </svg>
+                X.com
+              </a>
+            </li>
+            <li>
+              <a href="https://bsky.app/profile/vite.dev" target="_blank">
+                <svg
+                  className="button-icon"
+                  role="presentation"
+                  aria-hidden="true"
+                >
+                  <use href="/icons.svg#bluesky-icon"></use>
+                </svg>
+                Bluesky
+              </a>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <div className="ticks"></div>
+      <section id="spacer"></section>
+    </>
+  )
 }
 
 export default App;
