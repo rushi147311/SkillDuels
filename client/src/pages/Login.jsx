@@ -22,7 +22,7 @@ export default function Login() {
         if (response.data && response.data._id) {
           localStorage.setItem('skillDuelsPlayerId', response.data._id);
         }
-        navigate('/');
+        navigate('/dashboard');
       } else {
         setError(response.message || 'Login failed');
       }
