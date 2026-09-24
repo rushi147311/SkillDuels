@@ -5,7 +5,8 @@ import "./App.css";
 import QuizScreen from "./pages/QuizScreen";
 import ResultScreen from "./pages/ResultScreen";
 import Dashboard from "./pages/Dashboard";
-import WaitingRoom from "./components/WaitingRoom";
+import WaitingRoom from "./pages/WaitingRoom";
+import StartDuel from "./pages/StartDuel";
 import Leaderboard from "./pages/Leaderboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -197,96 +198,45 @@ function GameContainer() {
     );
   }
 
-  const handleFinish = async (score) => {
-    setFinalScore(score);
-
-    try {
-      const response = await submitScore({
-        matchId: matchData._id,
-        playerId,
-        score,
-      });
-
-      if (response.data.status === "Completed") {
-        setCompletedMatch(response.data);
-        setStage("result");
-      } else {
-        setStage("waiting");
-      }
-    } catch (requestError) {
-      setError(requestError.message);
-    }
-  };
-
   return (
-    <div className="duel-app quiz-page">
-      <header className="topbar">
-        <div className="brand">
-          <span className="brand-mark">⚡</span>
-          Skill<span>Duels</span>
-        </div>
+    <QuizScreen
+      match={matchData}
+      playerId={playerId}
+      finalScore={finalScore}
+      onFinish={async (score) => {
+        setFinalScore(score);
 
-        <div className="live-pill">
-          <span />
-          Live match
-        </div>
-      </header>
+        try {
+          const response = await submitScore({
+            matchId: matchData._id,
+            playerId,
+            score,
+          });
 
-      {stage === "quiz" ? (
-        <QuizScreen
-          questions={matchData.questions}
-          onFinish={handleFinish}
-        />
-      ) : stage === "waiting" ? (
-        <WaitingRoom
-          roomCode={matchData.roomCode}
-          message="Waiting for the other score"
-        />
-      ) : (
-        <ResultScreen
-          finalScore={finalScore}
-          totalPossible={matchData.questions.length * 10}
-          playerName={
-            matchData.players?.find(
-              (player) => player._id === playerId
-            )?.username || "Champion"
+          if (response.data.status === "Completed") {
+            setCompletedMatch(response.data);
+            setStage("result");
+          } else {
+            setStage("waiting");
           }
-          resultWinner={
-            completedMatch
-              ? completedMatch.winner
-                ? String(completedMatch.winner) === String(playerId)
-                : null
-              : undefined
-          }
-          onRestart={() => window.location.reload()}
-        />
-      )}
-    </div>
+        } catch (requestError) {
+          setError(requestError.message);
+        }
+      }}
+    />
   );
 }
-
-const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('skillDuelsToken');
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-  return children;
-};
 
 function App() {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
+      <Route path="/" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/start-duel" element={<StartDuel />} />
+      <Route path="/waiting/:roomId" element={<WaitingRoom />} />
+      <Route path="/dashboard" element={<GameContainer />} />
       <Route path="/leaderboard" element={<Leaderboard />} />
-      <Route 
-        path="/" 
-        element={
-          <ProtectedRoute>
-            <GameContainer />
-          </ProtectedRoute>
-        } 
-      />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
