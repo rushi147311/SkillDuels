@@ -11,7 +11,6 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminPage from './pages/adminPage/AdminPage.jsx';
 
-
 import {
   createRoom,
   getRoomStatus,
@@ -198,7 +197,6 @@ function GameContainer() {
       </div>
     );
   }
-
   const handleFinish = async (score) => {
     setFinalScore(score);
 
@@ -297,6 +295,15 @@ function App() {
           </ProtectedRoute>
         } 
       />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <GameContainer />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

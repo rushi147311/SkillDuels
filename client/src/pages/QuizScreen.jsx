@@ -29,7 +29,10 @@ export default function QuizScreen({ questions, onFinish }) {
   }, [handleNext, timeLeft]);
 
   const handleAnswer = (selectedIndex) => {
-    handleNext(selectedIndex === currentQ.correctAnswer);
+    const isCorrect =
+      selectedIndex === currentQ.correctAnswer ||
+      currentQ.options[selectedIndex] === currentQ.correctAnswer;
+    handleNext(isCorrect);
   };
 
   return (

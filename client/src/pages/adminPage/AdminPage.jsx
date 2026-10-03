@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './AdminPage.css';
 
-const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/admin`;
+const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/admin`;
 
 function AdminPage() {
   const [isDarkMode, setIsDarkMode] = useState(false);

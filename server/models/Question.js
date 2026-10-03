@@ -22,10 +22,8 @@ const questionSchema = new mongoose.Schema(
       validate: [arrayLimit,'A question must have between 2 and 4 options'],
     },
     correctAnswer: {
-      type: Number,
+      type: mongoose.Schema.Types.Mixed,
       required: [true, 'Please specify the correct answer'],
-      min: 0,
-      max: 3,
     },
     difficulty: {
       type: String,
