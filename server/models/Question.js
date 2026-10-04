@@ -22,7 +22,7 @@ const questionSchema = new mongoose.Schema(
       validate: [arrayLimit,'A question must have between 2 and 4 options'],
     },
     correctAnswer: {
-      type: String,
+      type: mongoose.Schema.Types.Mixed,
       required: [true, 'Please specify the correct answer'],
     },
     difficulty: {

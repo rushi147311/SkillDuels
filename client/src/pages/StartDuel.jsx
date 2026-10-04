@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { socket } from '../services/socket';
 
@@ -35,16 +35,15 @@ export default function StartDuel() {
                     <div className="gamepad-icon" style={{ fontSize: '28px', marginBottom: '15px' }}>🎮</div>
                     <h2 style={{ fontSize: '22px', fontWeight: 'bold', color: '#0f172a', marginBottom: '8px' }}>Start a Duel</h2>
                     <p style={{ color: '#64748b', fontSize: '13px', marginBottom: '25px' }}>Create a room and invite your opponent.</p>
-                    
                     <button className="create-room-btn" onClick={handleCreateRoom} style={{ width: '100%', background: '#2563eb', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', marginBottom: '20px' }}>
                         Create Room →
                     </button>
 
                     <div className="divider" style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 'bold', margin: '15px 0', position: 'relative' }}>OR</div>
 
-                    <input 
-                        type="text" 
-                        placeholder="Enter Room ID" 
+                    <input
+                        type="text"
+                        placeholder="Enter Room ID"
                         value={roomInput}
                         onChange={(e) => setRoomInput(e.target.value)}
                         className="room-input"

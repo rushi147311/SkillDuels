@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { socket } from '../services/socket';
 import QuizScreen from './QuizScreen'; // Ganeshchi original file
@@ -48,7 +48,7 @@ export default function QuizRoom() {
       socket.off('opponent_score_update');
       clearTimeout(timer);
     };
-  }, [roomId]);
+  }, [roomId, questions.length]);
 
   // Quiz samplyavar call honari function
   const handleQuizFinish = (finalScore) => {
@@ -74,9 +74,9 @@ export default function QuizRoom() {
       </div>
 
       {/* Ganeshcha original QuizScreen component */}
-      <QuizScreen 
-        questions={questions} 
-        onFinish={handleQuizFinish} 
+      <QuizScreen
+        questions={questions}
+        onFinish={handleQuizFinish}
       />
     </div>
   );

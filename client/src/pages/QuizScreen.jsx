@@ -28,8 +28,11 @@ export default function QuizScreen({ questions, onFinish }) {
     return () => clearInterval(timer);
   }, [handleNext, timeLeft]);
 
-  const handleAnswer = (selected) => {
-    handleNext(selected === currentQ.correctAnswer);
+  const handleAnswer = (selectedIndex) => {
+    const isCorrect =
+      selectedIndex === currentQ.correctAnswer ||
+      currentQ.options[selectedIndex] === currentQ.correctAnswer;
+    handleNext(isCorrect);
   };
 
   return (
@@ -42,10 +45,10 @@ export default function QuizScreen({ questions, onFinish }) {
       <p className="question-kicker">Choose the best answer</p>
       <h2>{currentQ.questionText}</h2>
       <div className="answer-grid">
-        {currentQ.options.map((opt) => (
+        {currentQ.options.map((opt, optionIndex) => (
           <button 
-            key={opt}
-            onClick={() => handleAnswer(opt)}
+            key={`${optionIndex}-${opt}`}
+            onClick={() => handleAnswer(optionIndex)}
           >
             {opt}
           </button>

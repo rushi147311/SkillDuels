@@ -13,7 +13,13 @@ const shuffleArray = (array) => {
 
 const shuffleQuestion = (question) => {
   const questionData = typeof question.toObject === 'function' ? question.toObject() : { ...question };
+  const correctAnswer = Number.isInteger(questionData.correctAnswer)
+    ? questionData.options[questionData.correctAnswer]
+    : questionData.correctAnswer;
   questionData.options = shuffleArray(questionData.options);
+  questionData.correctAnswer = Number.isInteger(questionData.correctAnswer)
+    ? questionData.options.indexOf(correctAnswer)
+    : correctAnswer;
   return questionData;
 };
 

@@ -7,6 +7,7 @@ const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const quizRoutes = require("./routes/quizRoutes"); 
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const adminRoutes = require("./routes/adminRouts");
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/quiz", quizRoutes); 
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/admin", adminRoutes);
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
   socket.on("join_match_room", (roomCode) => {
