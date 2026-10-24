@@ -1,6 +1,9 @@
+import LogoutButton from './LogoutButton';
+
 export default function WaitingRoom({ roomCode, message }) {
   return (
     <main className="waiting-room">
+      <LogoutButton className="logout-button waiting-room-logout" />
       <section className="duel-panel waiting-room-card">
         <div className="panel-icon">⏳</div>
         <p className="eyebrow">Room {roomCode}</p>

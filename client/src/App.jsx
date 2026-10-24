@@ -10,6 +10,7 @@ import Leaderboard from "./pages/Leaderboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminPage from './pages/adminPage/AdminPage.jsx';
+import LogoutButton from "./components/LogoutButton";
 
 import {
   createRoom,
@@ -180,9 +181,12 @@ function GameContainer() {
             Skill<span>Duels</span>
           </div>
 
-          <div className="live-pill">
-            <span />
-            Shared result
+          <div className="topbar-actions">
+            <div className="live-pill">
+              <span />
+              Shared result
+            </div>
+            <LogoutButton className="logout-button" />
           </div>
         </header>
 
@@ -226,9 +230,12 @@ function GameContainer() {
           Skill<span>Duels</span>
         </div>
 
-        <div className="live-pill">
-          <span />
-          Live match
+        <div className="topbar-actions">
+          <div className="live-pill">
+            <span />
+            Live match
+          </div>
+          <LogoutButton className="logout-button" />
         </div>
       </header>
 

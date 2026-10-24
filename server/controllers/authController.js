@@ -123,9 +123,11 @@ const login = async (req, res) => {
       });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || "default_secret", {
-      expiresIn: "30d",
-    });
+    const token = jwt.sign(
+      { id: user._id, tokenVersion: user.tokenVersion },
+      process.env.JWT_SECRET || "default_secret",
+      { expiresIn: "30d" }
+    );
 
     const safeUser = user.toObject();
     delete safeUser.password;
@@ -144,4 +146,20 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+const logout = async (req, res) => {
+  try {
+    await User.updateOne({ _id: req.user._id }, { $inc: { tokenVersion: 1 } });
+    res.status(200).json({
+      success: true,
+      message: "Logout successful. Token revoked.",
+    });
+  } catch (error) {
+    console.error("Failed to revoke authentication token:", error);
+    res.status(500).json({
+      success: false,
+      message: "Unable to revoke token. Please try again.",
+    });
+  }
+};
+
+module.exports = { register, login, logout };

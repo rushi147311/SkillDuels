@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './AdminPage.css';
+import LogoutButton from '../../components/LogoutButton';
 
 const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/admin`;
 
@@ -162,18 +163,7 @@ function AdminPage() {
         </nav>
 
         <div style={{ marginTop: 'auto', paddingTop: '20px' }}>
-          <button 
-            className="nav-btn logout-btn" 
-            onClick={() => {
-              if(window.confirm('Are you sure you want to log out?')) {
-                localStorage.removeItem('skillDuelsToken');
-                localStorage.removeItem('skillDuelsPlayerId');
-                window.location.href = '/login';
-              }
-            }}
-          >
-            🚪 Logout
-          </button>
+          <LogoutButton className="nav-btn logout-btn" />
         </div>
       </aside>
 

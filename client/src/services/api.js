@@ -54,6 +54,10 @@ export const login = (body) => request('/auth/login', {
   body: JSON.stringify(body),
 });
 
+export const logout = () => request('/auth/logout', {
+  method: 'POST',
+});
+
 export const register = (body) => request('/auth/register', {
   method: 'POST',
   body: JSON.stringify(body),
