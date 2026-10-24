@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { register } from '../services/api';
 import AuthLayout from '../components/AuthLayout';
 
@@ -9,17 +9,21 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
+  const [message, setMessage] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setMessage('');
     setLoading(true);
 
     try {
       const response = await register({ username, email, password });
       if (response.success) {
-        navigate('/login');
+        setMessage(response.message || 'Check your email for a verification link before signing in.');
+        setUsername('');
+        setEmail('');
+        setPassword('');
       } else {
         setError(response.message || 'Registration failed');
       }
@@ -66,6 +70,7 @@ export default function Register() {
         />
 
         {error && <p className="form-error" style={{ marginTop: '10px' }}>{error}</p>}
+        {message && <p className="form-success" role="status">{message}</p>}
 
         <button className="primary-button" type="submit" disabled={loading} style={{ marginTop: '20px' }}>
           {loading ? 'Creating Account...' : 'Create Account'} <span>→</span>

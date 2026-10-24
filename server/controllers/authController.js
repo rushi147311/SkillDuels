@@ -1,10 +1,31 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
+const {
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+} = require("../services/emailServices");
 
 const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
 const MIN_PASSWORD_LENGTH = 6;
 const MIN_USERNAME_LENGTH = 3;
+const VERIFICATION_TOKEN_TTL = 24 * 60 * 60 * 1000;
+const PASSWORD_RESET_TOKEN_TTL = 60 * 60 * 1000;
+
+const createToken = () => crypto.randomBytes(32).toString("hex");
+const hashToken = (token) => crypto.createHash("sha256").update(token).digest("hex");
+const toSafeUser = (user) => {
+  const safeUser = user.toObject();
+  [
+    "password",
+    "emailVerificationToken",
+    "emailVerificationExpires",
+    "passwordResetToken",
+    "passwordResetExpires",
+  ].forEach((field) => delete safeUser[field]);
+  return safeUser;
+};
 
 const register = async (req, res) => {
   try {
@@ -57,18 +78,31 @@ const register = async (req, res) => {
       });
     }
 
+    const verificationToken = createToken();
     const user = await User.create({
       username: normalizedUsername,
       email: normalizedEmail,
       password,
+      emailVerificationToken: hashToken(verificationToken),
+      emailVerificationExpires: new Date(Date.now() + VERIFICATION_TOKEN_TTL),
     });
+    req.app.get("io").emit("leaderboard_updated");
 
-    const safeUser = user.toObject();
-    delete safeUser.password;
+    const safeUser = toSafeUser(user);
+
+    try {
+      await sendVerificationEmail(user.email, verificationToken);
+    } catch (error) {
+      console.error("Failed to send email verification:", error);
+      return res.status(503).json({
+        success: false,
+        message: "Your account was created, but the verification email could not be sent. Please request another verification email.",
+      });
+    }
 
     res.status(201).json({
       success: true,
-      message: "User registered successfully.",
+      message: "Account created. Check your email for a verification link before signing in.",
       data: safeUser,
     });
   } catch (error) {
@@ -87,6 +121,157 @@ const register = async (req, res) => {
       success: false,
       message: "Server error. Please try again later.",
     });
+  }
+};
+
+const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (typeof token !== "string" || !token) {
+      return res.status(400).json({ success: false, message: "Verification token is required." });
+    }
+
+    const user = await User.findOne({
+      emailVerificationToken: hashToken(token),
+      emailVerificationExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "This verification link is invalid or has expired. Request a new verification email.",
+      });
+    }
+
+    user.emailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save();
+    req.app.get("io").emit("leaderboard_updated");
+
+    return res.status(200).json({ success: true, message: "Email verified. You can now sign in." });
+  } catch (error) {
+    console.error("Failed to verify email:", error);
+    return res.status(500).json({ success: false, message: "Unable to verify email. Please try again." });
+  }
+};
+
+const resendVerificationEmail = async (req, res) => {
+  try {
+    const { identifier } = req.body;
+
+    if (typeof identifier !== "string" || !identifier.trim()) {
+      return res.status(400).json({ success: false, message: "Email or username is required." });
+    }
+
+    const user = await User.findOne({
+      $or: [
+        { email: identifier.trim().toLowerCase() },
+        { username: identifier.trim() },
+      ],
+    });
+    if (!user || user.emailVerified) {
+      return res.status(200).json({
+        success: true,
+        message: "If this address has an unverified account, a verification email has been sent.",
+      });
+    }
+
+    const verificationToken = createToken();
+    user.emailVerificationToken = hashToken(verificationToken);
+    user.emailVerificationExpires = new Date(Date.now() + VERIFICATION_TOKEN_TTL);
+    await user.save();
+    await sendVerificationEmail(user.email, verificationToken);
+
+    return res.status(200).json({
+      success: true,
+      message: "If this address has an unverified account, a verification email has been sent.",
+    });
+  } catch (error) {
+    console.error("Failed to resend email verification:", error);
+    return res.status(503).json({
+      success: false,
+      message: "Unable to send the verification email. Please try again later.",
+    });
+  }
+};
+
+const requestPasswordReset = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (typeof email !== "string" || !EMAIL_REGEX.test(email.trim())) {
+      return res.status(400).json({ success: false, message: "Please provide a valid email address." });
+    }
+
+    const user = await User.findOne({
+      email: email.trim().toLowerCase(),
+      emailVerified: true,
+    });
+
+    if (user) {
+      const resetToken = createToken();
+      user.passwordResetToken = hashToken(resetToken);
+      user.passwordResetExpires = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL);
+      await user.save();
+      await sendPasswordResetEmail(user.email, resetToken);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "If a verified account exists for that email, a password reset link has been sent.",
+    });
+  } catch (error) {
+    console.error("Failed to request password reset:", error);
+    return res.status(503).json({
+      success: false,
+      message: "Unable to send the password reset email. Please try again later.",
+    });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    if (typeof token !== "string" || !token) {
+      return res.status(400).json({ success: false, message: "Password reset token is required." });
+    }
+
+    if (typeof password !== "string" || password.length < MIN_PASSWORD_LENGTH) {
+      return res.status(400).json({
+        success: false,
+        message: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`,
+      });
+    }
+
+    const user = await User.findOne({
+      passwordResetToken: hashToken(token),
+      passwordResetExpires: { $gt: new Date() },
+      emailVerified: true,
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "This password reset link is invalid or has expired. Request a new one.",
+      });
+    }
+
+    user.password = password;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    user.tokenVersion += 1;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password updated. You can now sign in with your new password.",
+    });
+  } catch (error) {
+    console.error("Failed to reset password:", error);
+    return res.status(500).json({ success: false, message: "Unable to reset password. Please try again." });
   }
 };
 
@@ -123,14 +308,21 @@ const login = async (req, res) => {
       });
     }
 
+    if (!user.emailVerified) {
+      return res.status(403).json({
+        success: false,
+        message: "Please verify your email address before signing in.",
+        code: "EMAIL_NOT_VERIFIED",
+      });
+    }
+
     const token = jwt.sign(
       { id: user._id, tokenVersion: user.tokenVersion },
       process.env.JWT_SECRET || "default_secret",
       { expiresIn: "30d" }
     );
 
-    const safeUser = user.toObject();
-    delete safeUser.password;
+    const safeUser = toSafeUser(user);
 
     res.status(200).json({
       success: true,
@@ -162,4 +354,12 @@ const logout = async (req, res) => {
   }
 };
 
-module.exports = { register, login, logout };
+module.exports = {
+  register,
+  verifyEmail,
+  resendVerificationEmail,
+  requestPasswordReset,
+  resetPassword,
+  login,
+  logout,
+};

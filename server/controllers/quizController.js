@@ -89,6 +89,7 @@ const createRoom = async (req, res) => {
           .populate('players', 'username')
           .populate('questions');
 
+        req.app.get('io').emit('public_rooms_updated');
         return res.status(200).json({ success: true, message: 'Joined public match successfully', data: prepareMatch(populatedMatch) });
       }
     }
@@ -108,6 +109,7 @@ const createRoom = async (req, res) => {
       .populate('players', 'username')
       .populate('questions');
 
+    if (roomType === 'public') req.app.get('io').emit('public_rooms_updated');
     res.status(201).json({ success: true, roomCode: match.roomCode, data: prepareMatch(populatedMatch) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -148,6 +150,7 @@ const joinRoom = async (req, res) => {
       .populate('players', 'username')
       .populate('questions');
 
+    req.app.get('io').emit('public_rooms_updated');
     res.status(200).json({ success: true, data: prepareMatch(populatedMatch) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -205,6 +208,7 @@ const submitMatchScore = async (req, res) => {
 
     await match.save();
 
+    if (bothPlayersSubmitted) req.app.get('io').emit('leaderboard_updated');
     res.status(200).json({ success: true, data: match });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

@@ -254,6 +254,24 @@ body {
   letter-spacing: 2px;
 }
 
+.leaderboard-counts {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.leaderboard-counts .online-count {
+  color: #15803d;
+  font-weight: 800;
+}
+
+.dashboard-player-count {
+  display: block;
+  margin-top: 5px;
+  color: #64748b;
+  font-size: 11px;
+}
+
 .ranking-list {
   display: flex;
   flex-direction: column;
@@ -309,6 +327,42 @@ body {
 
 .player-name-row strong {
   color: #0f172a;
+}
+
+.player-name-row .online-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0 8px 0 0;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .3px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.player-name-row .online-status::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  content: "";
+}
+
+.leaderboard-error,
+.leaderboard-message {
+  max-width: 900px;
+  margin: 20px auto;
+  color: #64748b;
+  text-align: center;
+}
+
+.leaderboard-error {
+  color: #b91c1c;
 }
 
 .player-name-row span {

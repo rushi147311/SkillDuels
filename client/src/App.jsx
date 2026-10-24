@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
+import { connectSocket } from "./services/socket";
 
 import QuizScreen from "./pages/QuizScreen";
 import ResultScreen from "./pages/ResultScreen";
@@ -9,6 +10,9 @@ import WaitingRoom from "./components/WaitingRoom";
 import Leaderboard from "./pages/Leaderboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail";
 import AdminPage from './pages/adminPage/AdminPage.jsx';
 import LogoutButton from "./components/LogoutButton";
 
@@ -281,10 +285,27 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
+  useEffect(() => {
+    const syncSocketAuthentication = (event) => {
+      if (!event || event.key === "skillDuelsToken") {
+        connectSocket(localStorage.getItem("skillDuelsToken"));
+      }
+    };
+
+    syncSocketAuthentication();
+    window.addEventListener("storage", syncSocketAuthentication);
+    return () => {
+      window.removeEventListener("storage", syncSocketAuthentication);
+    };
+  }, []);
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/leaderboard" element={<Leaderboard />} />
       <Route
         path="/admin"

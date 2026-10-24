@@ -7,6 +7,51 @@ const getScoreForPlayer = (match, playerId) => {
   return playerIndex === 0 ? match.scores.player1Score : match.scores.player2Score;
 };
 
+const getLeaderboard = async () => {
+  const leaderboardUsers = await User.find().select('username createdAt').sort({ username: 1 }).limit(50);
+  const leaderboard = await Promise.all(leaderboardUsers.map(async (leaderboardUser) => {
+    const userMatches = await Match.find({ players: leaderboardUser._id, status: 'Completed' }).select('players scores winner');
+    let wins = 0;
+    let xp = 0;
+
+    userMatches.forEach((match) => {
+      const score = getScoreForPlayer(match, leaderboardUser._id.toString());
+      xp += score;
+      if (match.winner?.toString() === leaderboardUser._id.toString()) wins += 1;
+    });
+
+    return {
+      id: leaderboardUser._id,
+      username: leaderboardUser.username,
+      wins,
+      matches: userMatches.length,
+      xp,
+      level: Math.floor(xp / 100) + 1,
+    };
+  }));
+
+  return leaderboard.sort((a, b) => b.xp - a.xp || b.wins - a.wins);
+};
+
+const getPublicLeaderboard = async (req, res) => {
+  try {
+    const [leaderboard, totalPlayers] = await Promise.all([
+      getLeaderboard(),
+      User.countDocuments(),
+    ]);
+    return res.json({
+      success: true,
+      data: {
+        players: leaderboard.slice(0, 10),
+        totalPlayers,
+      },
+    });
+  } catch (error) {
+    console.error('Failed to load public leaderboard:', error);
+    return res.status(500).json({ success: false, message: 'Unable to load leaderboard.' });
+  }
+};
+
 const getDashboard = async (req, res) => {
   try {
     const { playerId } = req.params;
@@ -14,42 +59,20 @@ const getDashboard = async (req, res) => {
     const user = validPlayerId ? await User.findById(playerId).select('-password') : null;
     const playerFilter = validPlayerId ? new mongoose.Types.ObjectId(playerId) : null;
 
-    const [matches, leaderboardUsers, publicRooms] = await Promise.all([
+    const [matches, leaderboard, publicRooms, totalPlayers] = await Promise.all([
       playerFilter
         ? Match.find({ players: playerFilter, status: 'Completed' })
           .sort({ updatedAt: -1 })
           .limit(10)
           .populate('players', 'username')
         : [],
-      User.find().select('username createdAt').sort({ username: 1 }).limit(50),
+      getLeaderboard(),
       Match.find({ roomType: 'public', status: 'Pending', 'players.1': { $exists: false } })
         .sort({ createdAt: -1 })
         .limit(8)
         .populate('players', 'username'),
+      User.countDocuments(),
     ]);
-
-    const leaderboard = await Promise.all(leaderboardUsers.map(async (leaderboardUser) => {
-      const userMatches = await Match.find({ players: leaderboardUser._id, status: 'Completed' }).select('players scores winner');
-      let wins = 0;
-      let xp = 0;
-
-      userMatches.forEach((match) => {
-        const score = getScoreForPlayer(match, leaderboardUser._id.toString());
-        xp += score;
-        if (match.winner?.toString() === leaderboardUser._id.toString()) wins += 1;
-      });
-
-      return {
-        id: leaderboardUser._id,
-        username: leaderboardUser.username,
-        wins,
-        matches: userMatches.length,
-        xp,
-        level: Math.floor(xp / 100) + 1,
-      };
-    }));
-
-    leaderboard.sort((a, b) => b.xp - a.xp || b.wins - a.wins);
 
     const playerMatches = matches.map((match) => ({
       id: match._id,
@@ -76,6 +99,7 @@ const getDashboard = async (req, res) => {
           matches: playerMatches.length,
         },
         leaderboard: leaderboard.slice(0, 10),
+        totalPlayers,
         publicRooms: publicRooms.map((room) => ({
           id: room._id,
           roomCode: room.roomCode,
@@ -91,4 +115,4 @@ const getDashboard = async (req, res) => {
   }
 };
 
-module.exports = { getDashboard };
+module.exports = { getDashboard, getPublicLeaderboard };

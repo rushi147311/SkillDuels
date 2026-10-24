@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '../services/api';
+import { disconnectSocket } from '../services/socket';
 
 export default function LogoutButton({ className = '' }) {
   const [loggingOut, setLoggingOut] = useState(false);
@@ -17,6 +18,7 @@ export default function LogoutButton({ className = '' }) {
     } finally {
       localStorage.removeItem('skillDuelsToken');
       localStorage.removeItem('skillDuelsPlayerId');
+      disconnectSocket();
       navigate('/login', { replace: true });
     }
   };

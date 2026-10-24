@@ -3,6 +3,8 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const http = require("http");
 const { Server } = require("socket.io");
+const jwt = require("jsonwebtoken");
+const User = require("./models/User");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const quizRoutes = require("./routes/quizRoutes"); 
@@ -13,7 +15,14 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
-const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174'];
+const frontendOrigin = process.env.FRONTEND_URL
+  ? new URL(process.env.FRONTEND_URL).origin
+  : null;
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  ...(frontendOrigin ? [frontendOrigin] : []),
+];
 
 const io = new Server(server, {
   cors: {
@@ -22,8 +31,37 @@ const io = new Server(server, {
   },
 });
 
+const onlineSocketsByUser = new Map();
+
+io.use(async (socket, next) => {
+  const token = socket.handshake.auth?.token;
+  if (!token) {
+    next();
+    return;
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select("emailVerified tokenVersion");
+    if (
+      !user ||
+      !user.emailVerified ||
+      (decoded.tokenVersion ?? 0) !== user.tokenVersion
+    ) {
+      next(new Error("Not authorized"));
+      return;
+    }
+
+    socket.data.userId = user._id.toString();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
+app.set("io", io);
 
 app.get("/", (req, res) => {
   res.json({
@@ -37,6 +75,24 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/admin", adminRoutes);
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
+  const userId = socket.data.userId;
+
+  if (userId) {
+    const userSockets = onlineSocketsByUser.get(userId) || new Set();
+    userSockets.add(socket.id);
+    onlineSocketsByUser.set(userId, userSockets);
+    io.emit("presence_updated", { userId, online: true });
+  }
+
+  socket.emit("presence_snapshot", {
+    userIds: Array.from(onlineSocketsByUser.keys()),
+  });
+  socket.on("request_presence_snapshot", () => {
+    socket.emit("presence_snapshot", {
+      userIds: Array.from(onlineSocketsByUser.keys()),
+    });
+  });
+
   socket.on("join_match_room", (roomCode) => {
     socket.join(roomCode);
     console.log(`User ${socket.id} joined match room: ${roomCode}`);
@@ -47,6 +103,14 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
+    if (userId) {
+      const userSockets = onlineSocketsByUser.get(userId);
+      userSockets?.delete(socket.id);
+      if (userSockets?.size === 0) {
+        onlineSocketsByUser.delete(userId);
+        io.emit("presence_updated", { userId, online: false });
+      }
+    }
     console.log(`User disconnected: ${socket.id}`);
   });
 });

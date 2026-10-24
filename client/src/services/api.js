@@ -20,7 +20,9 @@ async function request(path, options = {}) {
       localStorage.removeItem('skillDuelsPlayerId');
       window.location.href = '/login';
     }
-    throw new Error(payload.message || payload.error || 'The server request failed');
+    const error = new Error(payload.message || payload.error || 'The server request failed');
+    error.code = payload.code;
+    throw error;
   }
 
   return payload;
@@ -45,6 +47,8 @@ export const submitScore = (body) => request('/quiz/submit', {
 
 export const getDashboard = (playerId) => request(`/dashboard/${encodeURIComponent(playerId)}`);
 
+export const getPublicLeaderboard = () => request('/dashboard/leaderboard/public');
+
 export const getQuestionsByCategory = (categoryName) => request(
   `/quiz/questions/${encodeURIComponent(categoryName.trim())}`,
 );
@@ -59,6 +63,26 @@ export const logout = () => request('/auth/logout', {
 });
 
 export const register = (body) => request('/auth/register', {
+  method: 'POST',
+  body: JSON.stringify(body),
+});
+
+export const verifyEmail = (body) => request('/auth/verify-email', {
+  method: 'POST',
+  body: JSON.stringify(body),
+});
+
+export const resendVerification = (body) => request('/auth/resend-verification', {
+  method: 'POST',
+  body: JSON.stringify(body),
+});
+
+export const requestPasswordReset = (body) => request('/auth/forgot-password', {
+  method: 'POST',
+  body: JSON.stringify(body),
+});
+
+export const resetPassword = (body) => request('/auth/reset-password', {
   method: 'POST',
   body: JSON.stringify(body),
 });
