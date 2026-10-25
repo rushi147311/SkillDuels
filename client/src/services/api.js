@@ -15,12 +15,23 @@ async function request(path, options = {}) {
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    if (response.status === 401 && path !== '/auth/login' && path !== '/auth/register') {
+    const publicAuthPaths = [
+      '/auth/login',
+      '/auth/admin-login',
+      '/auth/register',
+      '/auth/verify-email',
+      '/auth/resend-verification',
+    ];
+    if (response.status === 401 && !publicAuthPaths.includes(path)) {
       localStorage.removeItem('skillDuelsToken');
       localStorage.removeItem('skillDuelsPlayerId');
+      localStorage.removeItem('skillDuelsUserRole');
       window.location.href = '/login';
     }
-    throw new Error(payload.message || payload.error || 'The server request failed');
+    const error = new Error(payload.message || payload.error || 'The server request failed');
+    error.code = payload.code;
+    error.status = response.status;
+    throw error;
   }
 
   return payload;
@@ -52,6 +63,21 @@ export const getQuestionsByCategory = (categoryName) => request(
 export const login = (body) => request('/auth/login', {
   method: 'POST',
   body: JSON.stringify(body),
+});
+
+export const adminLogin = (body) => request('/auth/admin-login', {
+  method: 'POST',
+  body: JSON.stringify(body),
+});
+
+export const verifyEmail = (token) => request('/auth/verify-email', {
+  method: 'POST',
+  body: JSON.stringify({ token }),
+});
+
+export const resendVerification = (email) => request('/auth/resend-verification', {
+  method: 'POST',
+  body: JSON.stringify({ email }),
 });
 
 export const logout = () => request('/auth/logout', {

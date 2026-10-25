@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import './AdminPage.css';
 import LogoutButton from '../../components/LogoutButton';
+
+const authConfig = () => ({ headers: { Authorization: 'Bearer ' + localStorage.getItem('skillDuelsToken') } });
+
 
 const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/admin`;
 
@@ -35,7 +38,7 @@ function AdminPage() {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/categories`);
+      const res = await axios.get(`${API_BASE_URL}/categories`, authConfig());
       const data = res.data.data || [];
       setCategories(data);
       if (data.length > 0 && !selectedCatId) {
@@ -48,7 +51,7 @@ function AdminPage() {
 
   const fetchQuestions = async (catId) => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/questions/category/${catId}`);
+      const res = await axios.get(`${API_BASE_URL}/questions/category/${catId}`, authConfig());
       setQuestions(res.data.data || []);
     } catch (err) {
       console.error('Error fetching questions:', err);
@@ -59,12 +62,12 @@ function AdminPage() {
     e.preventDefault();
     if (!categoryName.trim()) return alert('Category name is required');
     try {
-      await axios.post(`${API_BASE_URL}/categories`, { name: categoryName, description: categoryDesc });
+      await axios.post(`${API_BASE_URL}/categories`, { name: categoryName, description: categoryDesc }, authConfig());
       setCategoryName('');
       setCategoryDesc('');
       fetchCategories();
       alert('Category created successfully!');
-    } catch (err) {
+    } catch {
       alert('Failed to create category');
     }
   };
@@ -72,9 +75,9 @@ function AdminPage() {
   const handleDeleteCategory = async (id) => {
     if (!window.confirm('Delete this category?')) return;
     try {
-      await axios.delete(`${API_BASE_URL}/categories/${id}`);
+      await axios.delete(`${API_BASE_URL}/categories/${id}`, authConfig());
       fetchCategories();
-    } catch (err) {
+    } catch {
       alert('Failed to delete category');
     }
   };
@@ -97,12 +100,12 @@ function AdminPage() {
         options,
         correctAnswer: Number(correctAnswer),
         difficulty
-      });
+      }, authConfig());
       setQuestionText('');
       setOptions(['', '', '', '']);
       fetchQuestions(selectedCatId);
       alert('Question saved successfully!');
-    } catch (err) {
+    } catch {
       alert('Failed to save question');
     }
   };
@@ -110,9 +113,9 @@ function AdminPage() {
   const handleDeleteQuestion = async (id) => {
     if (!window.confirm('Delete this question?')) return;
     try {
-      await axios.delete(`${API_BASE_URL}/questions/${id}`);
+      await axios.delete(`${API_BASE_URL}/questions/${id}`, authConfig());
       fetchQuestions(selectedCatId);
-    } catch (err) {
+    } catch {
       alert('Failed to delete question');
     }
   };

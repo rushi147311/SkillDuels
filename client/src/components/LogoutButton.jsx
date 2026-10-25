@@ -17,6 +17,7 @@ export default function LogoutButton({ className = '' }) {
     } finally {
       localStorage.removeItem('skillDuelsToken');
       localStorage.removeItem('skillDuelsPlayerId');
+      localStorage.removeItem('skillDuelsUserRole');
       navigate('/login', { replace: true });
     }
   };

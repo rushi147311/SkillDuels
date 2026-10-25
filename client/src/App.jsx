@@ -9,6 +9,8 @@ import WaitingRoom from "./components/WaitingRoom";
 import Leaderboard from "./pages/Leaderboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import VerifyEmail from "./pages/VerifyEmail";
+import AdminLogin from "./pages/AdminLogin";
 import AdminPage from './pages/adminPage/AdminPage.jsx';
 import LogoutButton from "./components/LogoutButton";
 
@@ -273,10 +275,16 @@ function GameContainer() {
 }
 
 const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('skillDuelsToken');
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
+  const token = localStorage.getItem("skillDuelsToken");
+  if (!token) return <Navigate to="/login" replace />;
+  return children;
+};
+
+const AdminProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem("skillDuelsToken");
+  const role = localStorage.getItem("skillDuelsUserRole");
+  if (!token) return <Navigate to="/admin/login" replace />;
+  if (role !== "admin") return <Navigate to="/login" replace />;
   return children;
 };
 
@@ -285,13 +293,15 @@ function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/leaderboard" element={<Leaderboard />} />
       <Route
         path="/admin"
         element={
-          <ProtectedRoute>
+          <AdminProtectedRoute>
             <AdminPage />
-          </ProtectedRoute>
+          </AdminProtectedRoute>
         }
       />
       <Route 

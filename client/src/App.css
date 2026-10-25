@@ -616,3 +616,6 @@ input:focus {
     font-size: 38px;
   }
 }
+.form-success { color: #21805b; font-size: 13px; text-align: left; }
+.auth-link { display: inline-block; margin-top: 16px; color: #3857bd; font-size: 14px; font-weight: 700; text-decoration: none; }
+.auth-link:hover { text-decoration: underline; }
