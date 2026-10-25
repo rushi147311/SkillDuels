@@ -1,0 +1,3 @@
+export default function DashboardHistory({ history }) {
+  return <section className="dashboard-panel dashboard-list-panel"><div className="dashboard-section-heading"><div><span className="dashboard-eyebrow">Your activity</span><h2>Match history</h2></div><span className="heading-badge">Recent</span></div><div className="history-list">{history.length ? history.map((match) => <div className="history-row" key={match.id}><div className={`history-result ${match.won ? 'won' : 'lost'}`}>{match.won ? 'W' : 'L'}</div><div><strong>{match.categoryName}</strong><span>vs {match.opponent}</span></div><b>{match.score} XP</b></div>) : <p className="empty-dashboard">Complete a duel to build your history.</p>}</div></section>;
+}

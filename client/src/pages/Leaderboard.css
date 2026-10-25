@@ -1,0 +1,422 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f4f8ff;
+}
+
+.leaderboard-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 50% 5%, rgba(37, 99, 235, 0.12), transparent 28%),
+    linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%);
+  color: #1e293b;
+  font-family: Arial, Helvetica, sans-serif;
+  padding-bottom: 50px;
+}
+
+/* NAVBAR */
+
+.game-navbar {
+  height: 70px;
+  padding: 0 7%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border-bottom: 1px solid #dbeafe;
+  box-shadow: 0 2px 12px rgba(37, 99, 235, 0.08);
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #0f172a;
+}
+
+.logo span {
+  color: #2563eb;
+}
+
+.nav-player {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #2563eb;
+}
+
+.player-avatar,
+.mini-avatar,
+.podium-avatar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 800;
+  color: white;
+  background: linear-gradient(135deg, #2563eb, #38bdf8);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+}
+
+.player-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+}
+
+/* HERO */
+
+.hero-section {
+  text-align: center;
+  padding: 45px 20px 15px;
+}
+
+.trophy {
+  font-size: 45px;
+  filter: drop-shadow(0 4px 10px rgba(245, 158, 11, 0.2));
+}
+
+.hero-section h1 {
+  margin: 10px 0 7px;
+  font-size: 42px;
+  letter-spacing: 4px;
+  color: #1d4ed8;
+}
+
+.hero-section p {
+  margin: 0;
+  color: #64748b;
+}
+
+/* PODIUM */
+
+.podium {
+  max-width: 680px;
+  margin: 30px auto 40px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 18px;
+}
+
+.podium-player {
+  width: 180px;
+  text-align: center;
+  position: relative;
+}
+
+.podium-player h3 {
+  margin: 9px 0 4px;
+  font-size: 17px;
+  color: #0f172a;
+}
+
+.podium-player p {
+  margin: 0 0 10px;
+  color: #2563eb;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.medal {
+  font-size: 25px;
+  margin-bottom: 7px;
+}
+
+.crown {
+  position: absolute;
+  top: -34px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 27px;
+}
+
+.podium-avatar {
+  width: 65px;
+  height: 65px;
+  margin: auto;
+  border-radius: 50%;
+  border: 3px solid #60a5fa;
+  font-size: 22px;
+}
+
+.first .podium-avatar {
+  width: 78px;
+  height: 78px;
+  border-color: #fbbf24;
+  box-shadow: 0 5px 18px rgba(251, 191, 36, 0.25);
+}
+
+.podium-block {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 5px;
+  border: 1px solid #bfdbfe;
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  background: linear-gradient(180deg, #dbeafe, #ffffff);
+  font-size: 25px;
+  font-weight: 900;
+  color: #2563eb;
+  box-shadow: 0 -4px 12px rgba(37, 99, 235, 0.05);
+}
+
+.first .podium-block {
+  height: 85px;
+}
+
+.second .podium-block {
+  height: 60px;
+}
+
+.third .podium-block {
+  height: 45px;
+}
+
+/* YOUR RANK */
+
+.your-rank {
+  max-width: 900px;
+  margin: 0 auto 25px;
+  padding: 20px 25px;
+  border: 1px solid #93c5fd;
+  border-radius: 14px;
+  background: linear-gradient(90deg, #eff6ff, #ffffff);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.08);
+}
+
+.small-label {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #2563eb;
+  font-weight: bold;
+}
+
+.your-rank h2 {
+  margin: 5px 0 0;
+  color: #0f172a;
+}
+
+.your-stats {
+  display: flex;
+  gap: 40px;
+}
+
+.your-stats div {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.your-stats span,
+.wins span {
+  color: #64748b;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.your-stats strong {
+  margin-top: 4px;
+  color: #2563eb;
+}
+
+/* GLOBAL RANKINGS */
+
+.rankings-section {
+  max-width: 900px;
+  margin: auto;
+}
+
+.rankings-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.rankings-title h2 {
+  font-size: 16px;
+  letter-spacing: 1px;
+  color: #1e3a8a;
+}
+
+.rankings-title span {
+  color: #94a3b8;
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+
+.ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.ranking-row {
+  min-height: 74px;
+  padding: 12px 18px;
+  display: grid;
+  grid-template-columns: 55px 48px 1fr 70px 95px;
+  gap: 12px;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  transition: 0.2s ease;
+  box-shadow: 0 3px 12px rgba(37, 99, 235, 0.05);
+}
+
+.ranking-row:hover {
+  transform: translateY(-2px);
+  border-color: #60a5fa;
+  box-shadow: 0 7px 20px rgba(37, 99, 235, 0.12);
+}
+
+.current-player {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.rank-number {
+  font-size: 20px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.mini-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.player-info {
+  min-width: 0;
+}
+
+.player-name-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+
+.player-name-row strong {
+  color: #0f172a;
+}
+
+.player-name-row span {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.xp-bar {
+  height: 6px;
+  background: #dbeafe;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.xp-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #38bdf8);
+  border-radius: 10px;
+  box-shadow: 0 0 8px rgba(37, 99, 235, 0.25);
+}
+
+.wins {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.wins strong {
+  margin-top: 3px;
+  color: #0f172a;
+}
+
+.xp {
+  text-align: right;
+  color: #2563eb;
+}
+
+.xp span {
+  font-size: 11px;
+}
+
+/* FOOTER */
+
+.footer-text {
+  text-align: center;
+  color: #64748b;
+  font-size: 12px;
+  margin-top: 30px;
+}
+
+/* MOBILE */
+
+@media (max-width: 700px) {
+  .game-navbar {
+    padding: 0 20px;
+  }
+
+  .hero-section h1 {
+    font-size: 29px;
+  }
+
+  .podium {
+    padding: 0 10px;
+    gap: 7px;
+  }
+
+  .podium-player {
+    width: 31%;
+  }
+
+  .podium-avatar {
+    width: 52px;
+    height: 52px;
+  }
+
+  .first .podium-avatar {
+    width: 62px;
+    height: 62px;
+  }
+
+  .your-rank,
+  .rankings-section {
+    margin-left: 15px;
+    margin-right: 15px;
+  }
+
+  .your-rank {
+    align-items: flex-start;
+    gap: 20px;
+    flex-direction: column;
+  }
+
+  .your-stats {
+    width: 100%;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .ranking-row {
+    grid-template-columns: 40px 40px 1fr 70px;
+    padding: 12px 10px;
+  }
+
+  .wins {
+    display: none;
+  }
+
+  .xp {
+    font-size: 13px;
+  }
+}

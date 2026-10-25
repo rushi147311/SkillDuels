@@ -1,2 +1,18 @@
 # SkillDuels
-Competitive Learning and Quiz Battle Platform using MERN Stack
+
+Competitive Learning & Quiz Battle Platform
+
+## Tech Stack
+- React
+- Node.js
+- Express.js
+- MongoDB
+- Socket.IO
+- JWT
+
+## Team Members
+- Rushi (Team Leader)
+- Aditya
+- Ganesh
+- Kirjat
+- Ajay
