@@ -45,6 +45,8 @@ export const submitScore = (body) => request('/quiz/submit', {
   body: JSON.stringify(body),
 });
 
+export const getCategories = () => request('/quiz/categories');
+
 export const getDashboard = (playerId) => request(`/dashboard/${encodeURIComponent(playerId)}`);
 
 export const getPublicLeaderboard = () => request('/dashboard/leaderboard/public');

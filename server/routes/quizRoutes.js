@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const {getQuestionsByCategory, createRoom, joinRoom, getRoomStatus, submitMatchScore} = require('../controllers/quizController');
+const {getCategories, getQuestionsByCategory, createRoom, joinRoom, getRoomStatus, submitMatchScore} = require('../controllers/quizController');
 const { protect } = require('../middleware/authMiddleware'); 
 
+router.get('/categories', protect, getCategories);
 router.get('/questions/:categoryName', protect, getQuestionsByCategory);
 router.post('/create-room', protect, createRoom);
 router.post('/join-room', protect, joinRoom);

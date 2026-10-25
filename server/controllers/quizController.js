@@ -1,5 +1,6 @@
 const Question = require('../models/Question');
 const Match = require('../models/Match');
+const Category = require('../models/Category');
 const crypto = require('crypto');
 
 const shuffleArray = (array) => {
@@ -31,6 +32,15 @@ const prepareMatch = (match) => {
   return matchData;
 };
 
+const getCategories = async (req, res) => {
+  try {
+    const categories = await Category.find({}).sort({ name: 1 });
+    res.status(200).json({ success: true, data: categories });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 const getQuestionsByCategory = async (req, res) => {
   try {
     const categoryName = (req.params.categoryName || '').trim();
@@ -58,7 +68,12 @@ const createRoom = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide player ID, category name, and room type' });
     }
 
-    const questions = await Question.find({ categoryName: normalizedCategoryName });
+    const category = await Category.findOne({ name: normalizedCategoryName });
+    if (!category) {
+      return res.status(400).json({ success: false, message: 'Please select a valid category' });
+    }
+
+    const questions = await Question.find({ categoryName: category.name });
     
     if (questions.length < 3) {
       return res.status(400).json({ success: false, message: 'Not enough questions in this category to start a match' });
@@ -215,4 +230,4 @@ const submitMatchScore = async (req, res) => {
   }
 };
 
-module.exports = {getQuestionsByCategory, createRoom, joinRoom, getRoomStatus, submitMatchScore};
+module.exports = {getCategories, getQuestionsByCategory, createRoom, joinRoom, getRoomStatus, submitMatchScore};
