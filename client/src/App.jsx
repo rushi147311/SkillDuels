@@ -15,6 +15,7 @@ import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import AdminPage from './pages/adminPage/AdminPage.jsx';
 import LogoutButton from "./components/LogoutButton";
+import FriendNotifications from "./components/FriendNotifications";
 
 import {
   createRoom,
@@ -135,6 +136,19 @@ function GameContainer() {
     }
   };
 
+  const handleOpenRoom = async (roomCode) => {
+    setLoading(true);
+    setError("");
+    try {
+      startMatch(await getRoomStatus(roomCode));
+    } catch (requestError) {
+      setError(requestError.message);
+      throw requestError;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (waitingMatch && !matchData) {
     return (
       <WaitingRoom
@@ -149,6 +163,7 @@ function GameContainer() {
       <Dashboard
         playerId={playerId}
         onJoinRoom={handleJoinRoom}
+        onOpenRoom={handleOpenRoom}
         joinRoomLoading={loading}
         joinRoomError={error}
         onCreateRoom={async ({ categoryName, roomType }) => {
@@ -269,6 +284,9 @@ function GameContainer() {
                 : null
               : undefined
           }
+          opponentUsername={matchData.players?.find(
+            (player) => String(player._id) !== String(playerId)
+          )?.username}
           onRestart={() => window.location.reload()}
         />
       )}
@@ -300,6 +318,8 @@ function App() {
   }, []);
 
   return (
+    <>
+    <FriendNotifications />
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -333,6 +353,7 @@ function App() {
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }
 

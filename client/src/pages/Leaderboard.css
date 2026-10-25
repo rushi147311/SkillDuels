@@ -282,7 +282,7 @@ body {
   min-height: 74px;
   padding: 12px 18px;
   display: grid;
-  grid-template-columns: 55px 48px 1fr 70px 95px;
+  grid-template-columns: 45px 42px minmax(120px, 1fr) 65px 82px 125px;
   gap: 12px;
   align-items: center;
   background: #ffffff;
@@ -317,6 +317,14 @@ body {
 
 .player-info {
   min-width: 0;
+}
+
+.mutual-count {
+  display: block;
+  margin-top: 5px;
+  color: #64748b;
+  font-size: 10px !important;
+  letter-spacing: 0 !important;
 }
 
 .player-name-row {
@@ -462,8 +470,13 @@ body {
   }
 
   .ranking-row {
-    grid-template-columns: 40px 40px 1fr 70px;
+    grid-template-columns: 32px 34px minmax(80px, 1fr) 55px;
     padding: 12px 10px;
+  }
+
+  .ranking-row .friend-action {
+    grid-column: 3 / 5;
+    align-items: flex-start;
   }
 
   .wins {

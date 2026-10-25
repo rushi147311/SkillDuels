@@ -10,6 +10,7 @@ const authRoutes = require("./routes/authRoutes");
 const quizRoutes = require("./routes/quizRoutes"); 
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const adminRoutes = require("./routes/adminRouts");
+const friendRoutes = require("./routes/friendRoutes");
 
 dotenv.config();
 
@@ -72,12 +73,14 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/quiz", quizRoutes); 
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/friends", friendRoutes);
 app.use("/api/admin", adminRoutes);
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
   const userId = socket.data.userId;
 
   if (userId) {
+    socket.join(`user:${userId}`);
     const userSockets = onlineSocketsByUser.get(userId) || new Set();
     userSockets.add(socket.id);
     onlineSocketsByUser.set(userId, userSockets);

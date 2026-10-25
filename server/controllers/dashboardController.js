@@ -1,13 +1,15 @@
 const mongoose = require('mongoose');
 const Match = require('../models/Match');
 const User = require('../models/User');
+const Friend = require('../models/Friend');
+const Inbox = require('../models/Inbox');
 
 const getScoreForPlayer = (match, playerId) => {
   const playerIndex = match.players.findIndex((player) => player.toString() === playerId);
   return playerIndex === 0 ? match.scores.player1Score : match.scores.player2Score;
 };
 
-const getLeaderboard = async () => {
+const getLeaderboard = async (viewerId = null) => {
   const leaderboardUsers = await User.find().select('username createdAt').sort({ username: 1 }).limit(50);
   const leaderboard = await Promise.all(leaderboardUsers.map(async (leaderboardUser) => {
     const userMatches = await Match.find({ players: leaderboardUser._id, status: 'Completed' }).select('players scores winner');
@@ -30,13 +32,73 @@ const getLeaderboard = async () => {
     };
   }));
 
-  return leaderboard.sort((a, b) => b.xp - a.xp || b.wins - a.wins);
+  const sortedLeaderboard = leaderboard.sort((a, b) => b.xp - a.xp || b.wins - a.wins);
+  if (!viewerId) return sortedLeaderboard;
+
+  const playerIds = sortedLeaderboard.map((player) => player.id);
+  const [friendships, requests] = await Promise.all([
+    Friend.find({
+      $or: [
+        { user1: { $in: playerIds } },
+        { user2: { $in: playerIds } },
+        { user1: viewerId },
+        { user2: viewerId },
+      ],
+    }).select('user1 user2'),
+    Inbox.find({
+      type: 'friend_request',
+      status: 'pending',
+      $or: [
+        { sender: viewerId, recipient: { $in: playerIds } },
+        { recipient: viewerId, sender: { $in: playerIds } },
+      ],
+    }).select('sender recipient'),
+  ]);
+  const viewerIdString = viewerId.toString();
+  const viewerFriends = new Set();
+  const friendsByPlayer = new Map(playerIds.map((id) => [id.toString(), new Set()]));
+
+  friendships.forEach(({ user1, user2 }) => {
+    const firstId = user1.toString();
+    const secondId = user2.toString();
+    if (firstId === viewerIdString) viewerFriends.add(secondId);
+    if (secondId === viewerIdString) viewerFriends.add(firstId);
+    friendsByPlayer.get(firstId)?.add(secondId);
+    friendsByPlayer.get(secondId)?.add(firstId);
+  });
+
+  const requestsByPlayer = new Map();
+  requests.forEach((request) => {
+    const senderId = request.sender.toString();
+    const recipientId = request.recipient.toString();
+    const otherId = senderId === viewerIdString ? recipientId : senderId;
+    requestsByPlayer.set(otherId, {
+      status: recipientId === viewerIdString ? 'received' : 'sent',
+      requestId: request._id,
+    });
+  });
+
+  return sortedLeaderboard.map((player) => {
+    const playerId = player.id.toString();
+    const friendIds = friendsByPlayer.get(playerId) || new Set();
+    let mutualFriends = 0;
+    friendIds.forEach((friendId) => {
+      if (viewerFriends.has(friendId)) mutualFriends += 1;
+    });
+
+    return {
+      ...player,
+      mutualFriends: playerId === viewerIdString ? 0 : mutualFriends,
+      isFriend: viewerFriends.has(playerId),
+      friendRequest: requestsByPlayer.get(playerId) || null,
+    };
+  });
 };
 
 const getPublicLeaderboard = async (req, res) => {
   try {
     const [leaderboard, totalPlayers] = await Promise.all([
-      getLeaderboard(),
+      getLeaderboard(req.user?._id),
       User.countDocuments(),
     ]);
     return res.json({
@@ -66,7 +128,7 @@ const getDashboard = async (req, res) => {
           .limit(10)
           .populate('players', 'username')
         : [],
-      getLeaderboard(),
+      getLeaderboard(req.user._id),
       Match.find({ roomType: 'public', status: 'Pending', 'players.1': { $exists: false } })
         .sort({ createdAt: -1 })
         .limit(8)

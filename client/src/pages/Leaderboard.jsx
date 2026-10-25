@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getPublicLeaderboard } from "../services/api";
 import { socket } from "../services/socket";
+import FriendActionButton from "../components/FriendActionButton";
 import "./Leaderboard.css";
 
 function Leaderboard() {
@@ -10,6 +11,7 @@ function Leaderboard() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const currentPlayerId = localStorage.getItem("skillDuelsPlayerId");
+  const isAuthenticated = Boolean(localStorage.getItem("skillDuelsToken"));
 
   const refreshLeaderboard = useCallback(() => {
     getPublicLeaderboard()
@@ -35,11 +37,13 @@ function Leaderboard() {
 
     refreshLeaderboard();
     socket.on("leaderboard_updated", refreshLeaderboard);
+    socket.on("friends_updated", refreshLeaderboard);
     socket.on("presence_snapshot", handleSnapshot);
     socket.on("presence_updated", handlePresence);
     socket.emit("request_presence_snapshot");
     return () => {
       socket.off("leaderboard_updated", refreshLeaderboard);
+      socket.off("friends_updated", refreshLeaderboard);
       socket.off("presence_snapshot", handleSnapshot);
       socket.off("presence_updated", handlePresence);
     };
@@ -163,7 +167,28 @@ function Leaderboard() {
                     <div className="xp-bar">
                       <div className="xp-progress" style={{ width: `${progress}%` }} />
                     </div>
+                    {isAuthenticated && String(player.id) !== currentPlayerId && (
+                      <span className="mutual-count">
+                        {player.mutualFriends || 0} mutual {player.mutualFriends === 1 ? "friend" : "friends"}
+                      </span>
+                    )}
                   </div>
+                  {isAuthenticated && String(player.id) !== currentPlayerId && (
+                    <FriendActionButton
+                      key={`${player.id}-${player.isFriend}-${player.friendRequest?.status || "none"}`}
+                      username={player.username}
+                      relationship={{
+                        isFriend: player.isFriend,
+                        friendRequest: player.friendRequest
+                          ? {
+                              status: player.friendRequest.status,
+                              requestId: player.friendRequest.requestId,
+                            }
+                          : null,
+                      }}
+                      onUpdated={refreshLeaderboard}
+                    />
+                  )}
                   <div className="wins">
                     <span>WINS</span>
                     <strong>{player.wins}</strong>

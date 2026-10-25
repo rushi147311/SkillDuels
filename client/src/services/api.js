@@ -47,6 +47,38 @@ export const submitScore = (body) => request('/quiz/submit', {
 
 export const getCategories = () => request('/quiz/categories');
 
+export const getFriends = () => request('/friends');
+
+export const getFriendStatus = (username) => request(`/friends/status/${encodeURIComponent(username)}`);
+
+export const sendFriendRequest = (username) => request('/friends/requests', {
+  method: 'POST',
+  body: JSON.stringify({ username }),
+});
+
+export const respondToFriendRequest = (requestId, status) => request(`/friends/requests/${encodeURIComponent(requestId)}`, {
+  method: 'PATCH',
+  body: JSON.stringify({ status }),
+});
+
+export const removeFriend = (friendId) => request(`/friends/${encodeURIComponent(friendId)}`, {
+  method: 'DELETE',
+});
+
+export const getFriendProfile = (friendId) => request(`/friends/${encodeURIComponent(friendId)}/profile`);
+
+export const createFriendChallenge = (friendId, categoryName) => request(
+  `/friends/${encodeURIComponent(friendId)}/challenges`,
+  { method: 'POST', body: JSON.stringify({ categoryName }) },
+);
+
+export const getFriendMessages = (friendId) => request(`/friends/${encodeURIComponent(friendId)}/messages`);
+
+export const sendFriendMessage = (friendId, text) => request(
+  `/friends/${encodeURIComponent(friendId)}/messages`,
+  { method: 'POST', body: JSON.stringify({ text }) },
+);
+
 export const getDashboard = (playerId) => request(`/dashboard/${encodeURIComponent(playerId)}`);
 
 export const getPublicLeaderboard = () => request('/dashboard/leaderboard/public');

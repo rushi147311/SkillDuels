@@ -145,11 +145,19 @@ const joinRoom = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Invalid room code or match not found' });
     }
 
+    const alreadyJoined = match.players.some((player) => player.toString() === playerId);
+    if (match.status === 'In-Progress' && alreadyJoined) {
+      const populatedMatch = await Match.findById(match._id)
+        .populate('players', 'username')
+        .populate('questions');
+      return res.status(200).json({ success: true, data: prepareMatch(populatedMatch) });
+    }
+
     if (match.status !== 'Pending') {
       return res.status(400).json({ success: false, message: 'Match has already started or completed' });
     }
 
-    if (match.players.includes(playerId)) {
+    if (alreadyJoined) {
       return res.status(400).json({ success: false, message: 'Player is already in this room' });
     }
 
@@ -160,6 +168,9 @@ const joinRoom = async (req, res) => {
     match.players.push(playerId);
     match.status = 'In-Progress';
     await match.save();
+    match.players.forEach((userId) => {
+      req.app.get('io').emit('friends_updated', { userId: userId.toString() });
+    });
 
     const populatedMatch = await Match.findById(match._id)
       .populate('players', 'username')

@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import FriendActionButton from '../components/FriendActionButton';
 
-export default function ResultScreen({ finalScore, totalPossible, playerName, resultWinner, onRestart }) {
+export default function ResultScreen({ finalScore, totalPossible, playerName, resultWinner, opponentUsername, onRestart }) {
   const percentage = totalPossible ? Math.round((finalScore / totalPossible) * 100) : 0;
   const hasOfficialResult = resultWinner !== undefined;
   const isWinner = hasOfficialResult ? resultWinner === true : percentage >= 50;
@@ -134,6 +135,11 @@ export default function ResultScreen({ finalScore, totalPossible, playerName, re
               <span aria-hidden="true">◎</span> Instagram
             </button>
           </div>
+
+          {opponentUsername && <div className="result-friend-action">
+            <span>Keep the competition going</span>
+            <FriendActionButton username={opponentUsername} />
+          </div>}
 
           {shareState === 'instagram' && <p className="share-hint">Link copied. Paste it into your Instagram story or message.</p>}
 
