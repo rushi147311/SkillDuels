@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function AuthLayout({ children, title, subtitle }) {
   return (
     <div className="duel-app">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import axios from 'axios';
 import './AdminPage.css';
 import LogoutButton from '../../components/LogoutButton';
@@ -23,37 +23,63 @@ function AdminPage() {
   const [correctAnswer, setCorrectAnswer] = useState(0);
   const [difficulty, setDifficulty] = useState('medium');
 
-  useEffect(() => {
-    fetchCategories();
+  const getCategories = useCallback(async () => {
+    const res = await axios.get(`${API_BASE_URL}/categories`);
+    return res.data.data || [];
   }, []);
 
-  useEffect(() => {
-    if (selectedCatId && activeTab === 'questions') {
-      fetchQuestions(selectedCatId);
-    }
-  }, [selectedCatId, activeTab]);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/categories`);
-      const data = res.data.data || [];
+      const data = await getCategories();
       setCategories(data);
-      if (data.length > 0 && !selectedCatId) {
-        setSelectedCatId(data[0]._id);
-      }
+      setSelectedCatId((current) => (data.length > 0 && !current ? data[0]._id : current));
     } catch (err) {
       console.error('Error fetching categories:', err);
     }
-  };
+  }, [getCategories]);
 
-  const fetchQuestions = async (catId) => {
+  const getQuestions = useCallback(async (catId) => {
+    const res = await axios.get(`${API_BASE_URL}/questions/category/${catId}`);
+    return res.data.data || [];
+  }, []);
+
+  const fetchQuestions = useCallback(async (catId) => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/questions/category/${catId}`);
-      setQuestions(res.data.data || []);
+      setQuestions(await getQuestions(catId));
     } catch (err) {
       console.error('Error fetching questions:', err);
     }
-  };
+  }, [getQuestions]);
+
+  useEffect(() => {
+    let active = true;
+    getCategories()
+      .then((data) => {
+        if (!active) return;
+        setCategories(data);
+        setSelectedCatId((current) => (data.length > 0 && !current ? data[0]._id : current));
+      })
+      .catch((err) => console.error('Error fetching categories:', err));
+
+    return () => {
+      active = false;
+    };
+  }, [getCategories]);
+
+  useEffect(() => {
+    if (!selectedCatId || activeTab !== 'questions') return undefined;
+
+    let active = true;
+    getQuestions(selectedCatId)
+      .then((data) => {
+        if (active) setQuestions(data);
+      })
+      .catch((err) => console.error('Error fetching questions:', err));
+
+    return () => {
+      active = false;
+    };
+  }, [selectedCatId, activeTab, getQuestions]);
 
   const handleAddCategory = async (e) => {
     e.preventDefault();
@@ -65,6 +91,7 @@ function AdminPage() {
       fetchCategories();
       alert('Category created successfully!');
     } catch (err) {
+      console.error('Error creating category:', err);
       alert('Failed to create category');
     }
   };
@@ -75,6 +102,7 @@ function AdminPage() {
       await axios.delete(`${API_BASE_URL}/categories/${id}`);
       fetchCategories();
     } catch (err) {
+      console.error('Error deleting category:', err);
       alert('Failed to delete category');
     }
   };
@@ -103,6 +131,7 @@ function AdminPage() {
       fetchQuestions(selectedCatId);
       alert('Question saved successfully!');
     } catch (err) {
+      console.error('Error saving question:', err);
       alert('Failed to save question');
     }
   };
@@ -113,6 +142,7 @@ function AdminPage() {
       await axios.delete(`${API_BASE_URL}/questions/${id}`);
       fetchQuestions(selectedCatId);
     } catch (err) {
+      console.error('Error deleting question:', err);
       alert('Failed to delete question');
     }
   };

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { login } from '../services/api';
+import { setAuthToken } from '../services/authSession';
 import AuthLayout from '../components/AuthLayout';
 
 export default function Login() {
@@ -18,10 +19,9 @@ export default function Login() {
     try {
       const response = await login({ identifier, password });
       if (response.success && response.token) {
-        localStorage.setItem('skillDuelsToken', response.token);
-        if (response.data && response.data._id) {
-          localStorage.setItem('skillDuelsPlayerId', response.data._id);
-        }
+        localStorage.removeItem('skillDuelsToken');
+        localStorage.removeItem('skillDuelsPlayerId');
+        setAuthToken(response.token);
         navigate('/');
       } else {
         setError(response.message || 'Login failed');
@@ -59,7 +59,7 @@ export default function Login() {
         {error && <p className="form-error" style={{ marginTop: '10px' }}>{error}</p>}
 
         <button className="primary-button" type="submit" disabled={loading} style={{ marginTop: '20px' }}>
-          {loading ? 'Logging in...' : 'Login'} <span>→</span>
+          {loading ? 'Logging in...' : 'Login'} <span>?</span>
         </button>
 
         <div className="or-divider">OR</div>

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 
-export default function ResultScreen({ finalScore, totalPossible, playerName, resultWinner, onRestart }) {
+export default function ResultScreen({ finalScore, totalPossible, playerName, resultWinner, resultPending = false, onRestart }) {
   const percentage = totalPossible ? Math.round((finalScore / totalPossible) * 100) : 0;
   const hasOfficialResult = resultWinner !== undefined;
-  const isWinner = hasOfficialResult ? resultWinner === true : percentage >= 50;
-  const isTie = hasOfficialResult && resultWinner === null;
+  const isWinner = !resultPending && (hasOfficialResult ? resultWinner === true : percentage >= 50);
+  const isTie = !resultPending && hasOfficialResult && resultWinner === null;
   const [shareState, setShareState] = useState('idle');
 
   const shareMessage = `${playerName} scored ${finalScore}/${totalPossible} in SkillDuels!`;
@@ -98,21 +98,29 @@ export default function ResultScreen({ finalScore, totalPossible, playerName, re
         </div>}
         <div className="relative z-20 flex flex-col items-center">
           <div className="result-badge inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-inner mb-6">
-            {isWinner ? '✨ Victory secured' : isTie ? '🤝 Match tied' : 'Match lost'}
+            {resultPending ? '⏳ Score submitted · result pending' : isWinner ? '✨ Victory secured' : isTie ? '🤝 Match tied' : 'Match lost'}
           </div>
 
-          <p className="result-kicker text-xs uppercase tracking-widest text-slate-400 font-semibold mb-2">Final score</p>
+          <p className="result-kicker text-xs uppercase tracking-widest text-slate-400 font-semibold mb-2">
+            {resultPending ? 'Your submitted score' : 'Final score'}
+          </p>
           
           <div className="score-line text-5xl font-black tracking-tight text-slate-900 mb-6 bg-slate-50/80 px-6 py-3 rounded-2xl border border-slate-100 shadow-inner">
             <strong className="text-indigo-600">{finalScore}</strong><span className="text-slate-400 text-2xl font-medium"> / {totalPossible}</span>
           </div>
 
           <h1 className="congratulation text-2xl font-extrabold tracking-tight mb-3 text-slate-900">
-            {isWinner ? `Congratulations, ${playerName}!` : isTie ? 'It is a tie!' : 'You lost'}
+            {resultPending ? 'Your score is in!' : isWinner ? `Congratulations, ${playerName}!` : isTie ? 'It is a tie!' : 'You lost'}
           </h1>
           
           <p className="result-message text-sm text-slate-600 max-w-sm mb-8 leading-relaxed">
-            {isWinner ? 'You owned the duel and came out completely on top.' : isTie ? 'Both players scored the same. Better luck in the next duel!' : 'Better luck next time!'}
+            {resultPending
+              ? 'Your opponent is still playing. The official duel result will appear here as soon as they submit their score.'
+              : isWinner
+                ? 'You owned the duel and came out completely on top.'
+                : isTie
+                  ? 'Both players scored the same. Better luck in the next duel!'
+                  : 'Better luck next time!'}
           </p>
 
           <div className="share-win-panel">

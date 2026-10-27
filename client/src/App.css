@@ -616,3 +616,25 @@ input:focus {
     font-size: 38px;
   }
 }
+
+.dashboard-leaderboard-link {
+  padding: 10px 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--blue-dark);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.dashboard-leaderboard-link:hover {
+  background: #f1f3ff;
+}
+
+@media (max-width: 800px) {
+  .dashboard-leaderboard-link {
+    padding: 9px 10px;
+  }
+}

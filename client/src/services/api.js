@@ -1,10 +1,11 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+﻿const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import { clearAuthToken, getAuthToken } from './authSession';
 
 async function request(path, options = {}) {
-  const token = localStorage.getItem('skillDuelsToken');
+  const token = getAuthToken();
   const headers = {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(token ? { Authorization: 'Bearer ' + token } : {}),
     ...options.headers,
   };
 
@@ -12,12 +13,12 @@ async function request(path, options = {}) {
     ...options,
     headers,
   });
+
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
     if (response.status === 401 && path !== '/auth/login' && path !== '/auth/register') {
-      localStorage.removeItem('skillDuelsToken');
-      localStorage.removeItem('skillDuelsPlayerId');
+      clearAuthToken();
       window.location.href = '/login';
     }
     throw new Error(payload.message || payload.error || 'The server request failed');
@@ -43,11 +44,15 @@ export const submitScore = (body) => request('/quiz/submit', {
   body: JSON.stringify(body),
 });
 
-export const getDashboard = (playerId) => request(`/dashboard/${encodeURIComponent(playerId)}`);
+export const getDashboard = () => request('/dashboard/me');
+
+export const getLeaderboard = () => request('/leaderboard');
 
 export const getQuestionsByCategory = (categoryName) => request(
   `/quiz/questions/${encodeURIComponent(categoryName.trim())}`,
 );
+
+export const getCurrentUser = () => request('/auth/me');
 
 export const login = (body) => request('/auth/login', {
   method: 'POST',

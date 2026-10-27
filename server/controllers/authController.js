@@ -6,6 +6,12 @@ const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
 const MIN_PASSWORD_LENGTH = 6;
 const MIN_USERNAME_LENGTH = 3;
 
+const getSafeUser = (user) => {
+  const safeUser = user.toObject ? user.toObject() : { ...user };
+  delete safeUser.password;
+  return safeUser;
+};
+
 const register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -63,13 +69,10 @@ const register = async (req, res) => {
       password,
     });
 
-    const safeUser = user.toObject();
-    delete safeUser.password;
-
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "User registered successfully.",
-      data: safeUser,
+      data: getSafeUser(user),
     });
   } catch (error) {
     if (error.code === 11000) {
@@ -83,7 +86,7 @@ const register = async (req, res) => {
       });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Server error. Please try again later.",
     });
@@ -129,37 +132,45 @@ const login = async (req, res) => {
       { expiresIn: "30d" }
     );
 
-    const safeUser = user.toObject();
-    delete safeUser.password;
-
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Login successful.",
-      data: safeUser,
+      data: getSafeUser(user),
       token,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Server error. Please try again later.",
     });
   }
 };
 
+const getCurrentUser = async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, message: "Not authorized." });
+  }
+
+  return res.status(200).json({
+    success: true,
+    data: getSafeUser(req.user),
+  });
+};
+
 const logout = async (req, res) => {
   try {
     await User.updateOne({ _id: req.user._id }, { $inc: { tokenVersion: 1 } });
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Logout successful. Token revoked.",
     });
   } catch (error) {
     console.error("Failed to revoke authentication token:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Unable to revoke token. Please try again.",
     });
   }
 };
 
-module.exports = { register, login, logout };
+module.exports = { register, login, logout, getCurrentUser };

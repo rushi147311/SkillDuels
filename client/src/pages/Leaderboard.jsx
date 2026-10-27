@@ -1,164 +1,188 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { getCurrentUser, getLeaderboard } from "../services/api";
+import { getAuthToken } from "../services/authSession";
 import "./Leaderboard.css";
 
+const podiumOrder = [1, 0, 2];
+const medals = ["🥇", "🥈", "🥉"];
+
 function Leaderboard() {
-  const players = [
-    { id: 1, username: "Rushi", xp: 1250, level: 12, wins: 28 },
-    { id: 2, username: "Aditya", xp: 1100, level: 11, wins: 24 },
-    { id: 3, username: "Ganesh", xp: 950, level: 10, wins: 20 },
-    { id: 4, username: "Kirjat", xp: 800, level: 8, wins: 17 },
-    { id: 5, username: "Ajay", xp: 650, level: 7, wins: 14 },
-  ];
+  const [players, setPlayers] = useState([]);
+  const [status, setStatus] = useState("loading");
+  const [error, setError] = useState("");
+  const [retryCount, setRetryCount] = useState(0);
+  const [currentPlayerId, setCurrentPlayerId] = useState(null);
 
-  const maxXP = players[0].xp;
+  useEffect(() => {
+    let active = true;
 
-  const getMedal = (rank) => {
-    if (rank === 1) return "🥇";
-    if (rank === 2) return "🥈";
-    if (rank === 3) return "🥉";
-    return `#${rank}`;
+    const leaderboardRequest = getLeaderboard();
+    const userRequest = getAuthToken() ? getCurrentUser() : Promise.resolve(null);
+
+    Promise.all([leaderboardRequest, userRequest])
+      .then(([response, userResponse]) => {
+        if (!Array.isArray(response.data)) {
+          throw new Error("The leaderboard response was not in the expected format.");
+        }
+        if (active) {
+          setCurrentPlayerId(userResponse?.data?._id || null);
+          setPlayers(response.data);
+          setStatus("success");
+        }
+      })
+      .catch((requestError) => {
+        if (active) {
+          setError(requestError.message);
+          setStatus("error");
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [retryCount]);
+
+  const retry = () => {
+    setError("");
+    setStatus("loading");
+    setRetryCount((count) => count + 1);
   };
 
   return (
-    <div className="leaderboard-page">
+    <main className="leaderboard-page">
+      <header className="leaderboard-navbar">
+        <Link className="leaderboard-logo" to="/" aria-label="SkillDuels dashboard">
+          <span aria-hidden="true">⚔️</span> SKILL<span>DUELS</span>
+        </Link>
+        <Link className="leaderboard-dashboard-link" to="/">
+          Dashboard
+        </Link>
+      </header>
 
-      {/* Navbar */}
-      <nav className="game-navbar">
-        <div className="logo">
-          ⚔️ <span>SKILL</span>DUELS
-        </div>
-
-        <div className="nav-player">
-          <span>LVL 12</span>
-          <div className="player-avatar">R</div>
-        </div>
-      </nav>
-
-      {/* Heading */}
-      <section className="hero-section">
-        <div className="trophy">🏆</div>
-        <h1>LEADERBOARD</h1>
-        <p>Rise through the ranks. Duel. Win. Dominate.</p>
+      <section className="leaderboard-hero">
+        <span className="leaderboard-trophy" aria-hidden="true">🏆</span>
+        <p className="leaderboard-eyebrow">Compete. Climb. Conquer.</p>
+        <h1>Leaderboard</h1>
+        <p className="leaderboard-subtitle">Top players competing on SkillDuels</p>
       </section>
 
-      {/* Top 3 */}
-      <section className="podium">
-
-        <div className="podium-player second">
-          <div className="medal">🥈</div>
-          <div className="podium-avatar">A</div>
-          <h3>{players[1].username}</h3>
-          <p>{players[1].xp} XP</p>
-          <div className="podium-block">2</div>
+      {status === "loading" && (
+        <div className="leaderboard-message" role="status">
+          <span className="leaderboard-spinner" aria-hidden="true" />
+          Loading player rankings...
         </div>
+      )}
 
-        <div className="podium-player first">
-          <div className="crown">👑</div>
-          <div className="medal">🥇</div>
-          <div className="podium-avatar">R</div>
-          <h3>{players[0].username}</h3>
-          <p>{players[0].xp} XP</p>
-          <div className="podium-block">1</div>
-        </div>
+      {status === "error" && (
+        <section className="leaderboard-message leaderboard-error" role="alert">
+          <h2>Rankings are unavailable</h2>
+          <p>{error || "We couldn't load the leaderboard. Please try again."}</p>
+          <button className="leaderboard-retry" type="button" onClick={retry}>
+            Try again
+          </button>
+        </section>
+      )}
 
-        <div className="podium-player third">
-          <div className="medal">🥉</div>
-          <div className="podium-avatar">G</div>
-          <h3>{players[2].username}</h3>
-          <p>{players[2].xp} XP</p>
-          <div className="podium-block">3</div>
-        </div>
+      {status === "success" && players.length === 0 && (
+        <section className="leaderboard-message leaderboard-empty">
+          <span aria-hidden="true">⚡</span>
+          <h2>The leaderboard is waiting for its first duel</h2>
+          <p>Complete a match to earn points and claim your place among the top players.</p>
+          <Link className="leaderboard-retry" to="/">
+            Start a duel
+          </Link>
+        </section>
+      )}
 
-      </section>
+      {status === "success" && players.length > 0 && (
+        <>
+          <section className="leaderboard-podium" aria-label="Top three players">
+            {podiumOrder.map((playerIndex) => {
+              const player = players[playerIndex];
+              const rank = playerIndex + 1;
+              if (!player) {
+                return (
+                  <div
+                    className={`podium-card podium-rank-${rank} podium-placeholder`}
+                    key={`podium-placeholder-${rank}`}
+                    aria-hidden="true"
+                  />
+                );
+              }
 
-      {/* Current Player */}
-      <section className="your-rank">
-        <div>
-          <span className="small-label">YOUR RANK</span>
-          <h2>#1 Rushi</h2>
-        </div>
+              const initials = player.username.slice(0, 1).toUpperCase();
 
-        <div className="your-stats">
-          <div>
-            <span>LEVEL</span>
-            <strong>12</strong>
-          </div>
-
-          <div>
-            <span>WINS</span>
-            <strong>28</strong>
-          </div>
-
-          <div>
-            <span>XP</span>
-            <strong>1250</strong>
-          </div>
-        </div>
-      </section>
-
-      {/* Rankings */}
-      <section className="rankings-section">
-
-        <div className="rankings-title">
-          <h2>⚔️ GLOBAL RANKINGS</h2>
-          <span>TOP PLAYERS</span>
-        </div>
-
-        <div className="ranking-list">
-
-          {players.map((player, index) => {
-            const rank = index + 1;
-            const progress = (player.xp / maxXP) * 100;
-
-            return (
-              <div
-                className={`ranking-row ${
-                  player.username === "Rushi" ? "current-player" : ""
-                }`}
-                key={player.id}
-              >
-                <div className="rank-number">
-                  {getMedal(rank)}
-                </div>
-
-                <div className="mini-avatar">
-                  {player.username.charAt(0)}
-                </div>
-
-                <div className="player-info">
-                  <div className="player-name-row">
-                    <strong>{player.username}</strong>
-                    <span>LVL {player.level}</span>
+              return (
+                <article
+                  className={`podium-card podium-rank-${rank}`}
+                  key={player.playerId}
+                >
+                  {rank === 1 && <span className="podium-crown" aria-hidden="true">👑</span>}
+                  <span className="podium-medal" aria-hidden="true">{medals[playerIndex]}</span>
+                  <div className="podium-avatar" aria-hidden="true">{initials}</div>
+                  <h2>{player.username}</h2>
+                  <p className="podium-points">{player.totalPoints.toLocaleString()} pts</p>
+                  <p className="podium-record">
+                    {player.wins} wins · {player.matchesPlayed} matches · {player.winRate}% win rate
+                  </p>
+                  <div className="podium-base" aria-label={`Rank ${rank}`}>
+                    {rank}
                   </div>
+                </article>
+              );
+            })}
+          </section>
 
-                  <div className="xp-bar">
-                    <div
-                      className="xp-progress"
-                      style={{ width: `${progress}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                <div className="wins">
-                  <span>WINS</span>
-                  <strong>{player.wins}</strong>
-                </div>
-
-                <div className="xp">
-                  <strong>{player.xp}</strong>
-                  <span> XP</span>
-                </div>
+          <section className="leaderboard-rankings">
+            <div className="leaderboard-section-heading">
+              <div>
+                <p className="leaderboard-eyebrow">Global standings</p>
+                <h2>Player rankings</h2>
               </div>
-            );
-          })}
+              <span>{players.length} {players.length === 1 ? "player" : "players"}</span>
+            </div>
 
-        </div>
-      </section>
-
-      <p className="footer-text">
-        Keep dueling to climb the leaderboard ⚡
-      </p>
-
-    </div>
+            <div className="ranking-table">
+              <div className="ranking-table-header" aria-hidden="true">
+                <span>Rank</span>
+                <span>Player</span>
+                <span>Points</span>
+                <span>Matches</span>
+                <span>Wins</span>
+                <span>Win rate</span>
+              </div>
+              {players.slice(3).length > 0 ? players.slice(3).map((player) => (
+                <div
+                  className={`ranking-row ${
+                    player.playerId === currentPlayerId ? "ranking-current-player" : ""
+                  }`}
+                  key={player.playerId}
+                >
+                  <span className="ranking-rank">#{player.rank}</span>
+                  <span className="ranking-player">
+                    <span className="ranking-avatar" aria-hidden="true">
+                      {player.username.slice(0, 1).toUpperCase()}
+                    </span>
+                    <strong>{player.username}</strong>
+                    {player.playerId === currentPlayerId && (
+                      <span className="you-badge">You</span>
+                    )}
+                  </span>
+                  <strong className="ranking-points">{player.totalPoints.toLocaleString()}</strong>
+                  <span className="ranking-stat" data-label="Matches">{player.matchesPlayed}</span>
+                  <span className="ranking-stat" data-label="Wins">{player.wins}</span>
+                  <span className="ranking-stat" data-label="Win rate">{player.winRate}%</span>
+                </div>
+              )) : (
+                <p className="ranking-list-empty">All ranked players are shown on the podium.</p>
+              )}
+            </div>
+          </section>
+          <p className="leaderboard-footer">Keep dueling to climb the leaderboard ⚡</p>
+        </>
+      )}
+    </main>
   );
 }
 

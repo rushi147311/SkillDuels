@@ -9,4 +9,4 @@ router.post('/join-room', protect, joinRoom);
 router.get('/room/:roomCode', protect, getRoomStatus);
 router.post('/submit', protect, submitMatchScore);
 
-module.exports = router;
+module.exports = router;3

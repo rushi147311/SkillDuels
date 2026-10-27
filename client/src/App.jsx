@@ -11,33 +11,23 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminPage from './pages/adminPage/AdminPage.jsx';
 import LogoutButton from "./components/LogoutButton";
+import { clearAuthToken, getAuthToken } from "./services/authSession";
 
 import {
   createRoom,
+  getCurrentUser,
   getRoomStatus,
   joinRoom,
   submitScore,
 } from "./services/api";
 
-const getPlayerId = () => {
-  const savedId = window.localStorage.getItem("skillDuelsPlayerId");
-
-  if (savedId) return savedId;
-
-  const playerId = crypto.randomUUID().replaceAll("-", "").slice(0, 24);
-
-  window.localStorage.setItem("skillDuelsPlayerId", playerId);
-
-  return playerId;
-};
-
 const getSharedResult = () => {
   const params = new URLSearchParams(window.location.search);
 
-  if (params.get("result") !== "1") return null;
+  if (params.get('result') !== '1') return null;
 
-  const score = Number(params.get("score"));
-  const total = Number(params.get("total"));
+  const score = Number(params.get('score'));
+  const total = Number(params.get('total'));
 
   if (!Number.isFinite(score) || !Number.isFinite(total) || total <= 0) {
     return null;
@@ -46,44 +36,72 @@ const getSharedResult = () => {
   return {
     score,
     total,
-    player: params.get("player") || "Champion",
+    player: params.get('player') || 'Champion',
   };
 };
 
 function GameContainer() {
-  const [stage, setStage] = useState("quiz");
+  const [playerId, setPlayerId] = useState(null);
+
+  useEffect(() => {
+    const token = getAuthToken();
+    if (!token) return undefined;
+
+    let active = true;
+
+    getCurrentUser()
+      .then((response) => {
+        if (!active) return;
+        const authenticatedPlayerId = response?.data?._id;
+        if (!authenticatedPlayerId) {
+          throw new Error('Authenticated user info was not returned.');
+        }
+        setPlayerId(authenticatedPlayerId);
+      })
+      .catch(() => {
+        if (!active) return;
+        clearAuthToken();
+        window.location.href = '/login';
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (!playerId) {
+    return <div className="dashboard-loading">Loading your account...</div>;
+  }
+
+  return <GameSession key={playerId} playerId={playerId} />;
+}
+
+function GameSession({ playerId }) {
+  const [stage, setStage] = useState('quiz');
   const [matchData, setMatchData] = useState(null);
   const [waitingMatch, setWaitingMatch] = useState(null);
   const [completedMatch, setCompletedMatch] = useState(null);
   const [finalScore, setFinalScore] = useState(0);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [sharedResult] = useState(getSharedResult);
 
-  const playerId = getPlayerId();
-
   useEffect(() => {
-    const roomToPoll =
-      waitingMatch?.roomCode ||
-      (stage === "waiting" ? matchData?.roomCode : null);
-
-    if (!roomToPoll) return undefined;
+    const roomToPoll = waitingMatch?.roomCode || (stage === 'waiting' ? matchData?.roomCode : null);
+    if (!roomToPoll || !playerId) return undefined;
 
     const checkRoom = async () => {
       try {
         const response = await getRoomStatus(roomToPoll);
         const latestMatch = response.data;
 
-        if (waitingMatch && latestMatch.status === "In-Progress") {
+        if (waitingMatch && latestMatch.status === 'In-Progress') {
           setWaitingMatch(null);
           setMatchData(latestMatch);
-          setStage("quiz");
-        } else if (
-          stage === "waiting" &&
-          latestMatch.status === "Completed"
-        ) {
+          setStage('quiz');
+        } else if (stage === 'waiting' && latestMatch.status === 'Completed') {
           setCompletedMatch(latestMatch);
-          setStage("result");
+          setStage('result');
         }
       } catch (requestError) {
         setError(requestError.message);
@@ -91,38 +109,36 @@ function GameContainer() {
     };
 
     checkRoom();
-
     const interval = setInterval(checkRoom, 2000);
-
     return () => clearInterval(interval);
-  }, [matchData, stage, waitingMatch]);
+  }, [matchData, stage, waitingMatch, playerId]);
 
   const startMatch = (response) => {
     const match = response.data;
 
     if (!match?.questions?.length) {
-      throw new Error("This match has no questions yet");
+      throw new Error('This match has no questions yet');
     }
 
-    if (match.status === "Pending") {
+    if (match.status === 'Pending') {
       setWaitingMatch(match);
-    } else {
-      setMatchData(match);
-      setWaitingMatch(null);
+      return;
     }
+
+    setMatchData(match);
+    setWaitingMatch(null);
   };
 
   const handleJoinRoom = async (roomCode) => {
+    if (!playerId) {
+      throw new Error('You must be logged in before joining a room.');
+    }
+
     setLoading(true);
-    setError("");
+    setError('');
 
     try {
-      startMatch(
-        await joinRoom({
-          playerId,
-          roomCode: roomCode.trim(),
-        })
-      );
+      startMatch(await joinRoom({ roomCode: roomCode.trim() }));
     } catch (requestError) {
       setError(requestError.message);
       throw requestError;
@@ -132,33 +148,21 @@ function GameContainer() {
   };
 
   if (waitingMatch && !matchData) {
-    return (
-      <WaitingRoom
-        roomCode={waitingMatch.roomCode}
-        message="Waiting for an opponent"
-      />
-    );
+    return <WaitingRoom roomCode={waitingMatch.roomCode} message="Waiting for an opponent" />;
   }
 
   if (!matchData && !sharedResult) {
     return (
       <Dashboard
-        playerId={playerId}
         onJoinRoom={handleJoinRoom}
         joinRoomLoading={loading}
         joinRoomError={error}
         onCreateRoom={async ({ categoryName, roomType }) => {
           setLoading(true);
-          setError("");
+          setError('');
 
           try {
-            startMatch(
-              await createRoom({
-                playerId,
-                categoryName,
-                roomType,
-              })
-            );
+            startMatch(await createRoom({ categoryName, roomType }));
           } catch (requestError) {
             setError(requestError.message);
             throw requestError;
@@ -177,7 +181,7 @@ function GameContainer() {
       <div className="duel-app quiz-page">
         <header className="topbar">
           <div className="brand">
-            <span className="brand-mark">⚡</span>
+            <span className="brand-mark">?</span>
             Skill<span>Duels</span>
           </div>
 
@@ -201,24 +205,22 @@ function GameContainer() {
       </div>
     );
   }
+
   const handleFinish = async (score) => {
     setFinalScore(score);
 
     try {
-      const response = await submitScore({
-        matchId: matchData._id,
-        playerId,
-        score,
-      });
+      const response = await submitScore({ matchId: matchData._id, score });
 
-      if (response.data.status === "Completed") {
+      if (response.data.status === 'Completed') {
         setCompletedMatch(response.data);
-        setStage("result");
+        setStage('result');
       } else {
-        setStage("waiting");
+        setStage('waiting');
       }
     } catch (requestError) {
       setError(requestError.message);
+      setStage('waiting');
     }
   };
 
@@ -226,7 +228,7 @@ function GameContainer() {
     <div className="duel-app quiz-page">
       <header className="topbar">
         <div className="brand">
-          <span className="brand-mark">⚡</span>
+          <span className="brand-mark">?</span>
           Skill<span>Duels</span>
         </div>
 
@@ -239,32 +241,22 @@ function GameContainer() {
         </div>
       </header>
 
-      {stage === "quiz" ? (
-        <QuizScreen
-          questions={matchData.questions}
-          onFinish={handleFinish}
-        />
-      ) : stage === "waiting" ? (
-        <WaitingRoom
-          roomCode={matchData.roomCode}
-          message="Waiting for the other score"
+      {stage === 'quiz' ? (
+        <QuizScreen questions={matchData.questions} onFinish={handleFinish} />
+      ) : stage === 'waiting' ? (
+        <ResultScreen
+          finalScore={finalScore}
+          totalPossible={matchData.questions.length * 10}
+          playerName={matchData.players?.find((player) => String(player._id || player) === String(playerId))?.username || 'Champion'}
+          resultPending
+          onRestart={() => window.location.reload()}
         />
       ) : (
         <ResultScreen
           finalScore={finalScore}
           totalPossible={matchData.questions.length * 10}
-          playerName={
-            matchData.players?.find(
-              (player) => player._id === playerId
-            )?.username || "Champion"
-          }
-          resultWinner={
-            completedMatch
-              ? completedMatch.winner
-                ? String(completedMatch.winner) === String(playerId)
-                : null
-              : undefined
-          }
+          playerName={matchData.players?.find((player) => String(player._id || player) === String(playerId))?.username || 'Champion'}
+          resultWinner={completedMatch ? (completedMatch.winner ? String(completedMatch.winner) === String(playerId) : null) : undefined}
           onRestart={() => window.location.reload()}
         />
       )}
@@ -273,7 +265,7 @@ function GameContainer() {
 }
 
 const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('skillDuelsToken');
+  const token = getAuthToken();
   if (!token) {
     return <Navigate to="/login" replace />;
   }
@@ -286,30 +278,9 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/leaderboard" element={<Leaderboard />} />
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute>
-            <AdminPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route 
-        path="/" 
-        element={
-          <ProtectedRoute>
-            <GameContainer />
-          </ProtectedRoute>
-        } 
-      />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <GameContainer />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+      <Route path="/" element={<ProtectedRoute><GameContainer /></ProtectedRoute>} />
+      <Route path="/dashboard" element={<ProtectedRoute><GameContainer /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

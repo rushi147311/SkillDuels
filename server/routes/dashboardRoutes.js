@@ -4,6 +4,7 @@ const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
+router.get('/me', protect, getDashboard);
 router.get('/:playerId', protect, getDashboard);
 
 module.exports = router;
