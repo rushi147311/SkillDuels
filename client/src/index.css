@@ -25,3 +25,54 @@ body {
 #root {
   min-height: 100vh;
 }
+
+.form-success {
+  margin: 12px 0;
+  color: #18794e;
+  font-size: 13px;
+  text-align: left;
+}
+
+.auth-link,
+.text-button {
+  display: block;
+  margin-top: 14px;
+  color: #3857bd;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.online-status {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  margin: 0 0 0 7px !important;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #15803d !important;
+  font-size: 9px !important;
+  font-weight: 800;
+  letter-spacing: .3px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.online-status::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  content: "";
+}
+
+.text-button {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}

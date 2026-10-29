@@ -1,6 +1,9 @@
+
 import { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
+import { connectSocket } from "./services/socket";
+import { clearAuthToken, getAuthToken } from "./services/authSession";
 
 import QuizScreen from "./pages/QuizScreen";
 import ResultScreen from "./pages/ResultScreen";
@@ -9,9 +12,12 @@ import WaitingRoom from "./components/WaitingRoom";
 import Leaderboard from "./pages/Leaderboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import AdminPage from './pages/adminPage/AdminPage.jsx';
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail";
+import AdminPage from "./pages/adminPage/AdminPage.jsx";
 import LogoutButton from "./components/LogoutButton";
-import { clearAuthToken, getAuthToken } from "./services/authSession";
+import FriendNotifications from "./components/FriendNotifications";
 
 import {
   createRoom,
@@ -24,10 +30,10 @@ import {
 const getSharedResult = () => {
   const params = new URLSearchParams(window.location.search);
 
-  if (params.get('result') !== '1') return null;
+  if (params.get("result") !== "1") return null;
 
-  const score = Number(params.get('score'));
-  const total = Number(params.get('total'));
+  const score = Number(params.get("score"));
+  const total = Number(params.get("total"));
 
   if (!Number.isFinite(score) || !Number.isFinite(total) || total <= 0) {
     return null;
@@ -36,7 +42,7 @@ const getSharedResult = () => {
   return {
     score,
     total,
-    player: params.get('player') || 'Champion',
+    player: params.get("player") || "Champion",
   };
 };
 
@@ -52,16 +58,20 @@ function GameContainer() {
     getCurrentUser()
       .then((response) => {
         if (!active) return;
+
         const authenticatedPlayerId = response?.data?._id;
+
         if (!authenticatedPlayerId) {
-          throw new Error('Authenticated user info was not returned.');
+          throw new Error("Authenticated user info was not returned.");
         }
+
         setPlayerId(authenticatedPlayerId);
       })
       .catch(() => {
         if (!active) return;
+
         clearAuthToken();
-        window.location.href = '/login';
+        window.location.href = "/login";
       });
 
     return () => {
@@ -77,17 +87,20 @@ function GameContainer() {
 }
 
 function GameSession({ playerId }) {
-  const [stage, setStage] = useState('quiz');
+  const [stage, setStage] = useState("quiz");
   const [matchData, setMatchData] = useState(null);
   const [waitingMatch, setWaitingMatch] = useState(null);
   const [completedMatch, setCompletedMatch] = useState(null);
   const [finalScore, setFinalScore] = useState(0);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [sharedResult] = useState(getSharedResult);
 
   useEffect(() => {
-    const roomToPoll = waitingMatch?.roomCode || (stage === 'waiting' ? matchData?.roomCode : null);
+    const roomToPoll =
+      waitingMatch?.roomCode ||
+      (stage === "waiting" ? matchData?.roomCode : null);
+
     if (!roomToPoll || !playerId) return undefined;
 
     const checkRoom = async () => {
@@ -95,13 +108,16 @@ function GameSession({ playerId }) {
         const response = await getRoomStatus(roomToPoll);
         const latestMatch = response.data;
 
-        if (waitingMatch && latestMatch.status === 'In-Progress') {
+        if (waitingMatch && latestMatch.status === "In-Progress") {
           setWaitingMatch(null);
           setMatchData(latestMatch);
-          setStage('quiz');
-        } else if (stage === 'waiting' && latestMatch.status === 'Completed') {
+          setStage("quiz");
+        } else if (
+          stage === "waiting" &&
+          latestMatch.status === "Completed"
+        ) {
           setCompletedMatch(latestMatch);
-          setStage('result');
+          setStage("result");
         }
       } catch (requestError) {
         setError(requestError.message);
@@ -110,6 +126,7 @@ function GameSession({ playerId }) {
 
     checkRoom();
     const interval = setInterval(checkRoom, 2000);
+
     return () => clearInterval(interval);
   }, [matchData, stage, waitingMatch, playerId]);
 
@@ -117,10 +134,10 @@ function GameSession({ playerId }) {
     const match = response.data;
 
     if (!match?.questions?.length) {
-      throw new Error('This match has no questions yet');
+      throw new Error("This match has no questions yet");
     }
 
-    if (match.status === 'Pending') {
+    if (match.status === "Pending") {
       setWaitingMatch(match);
       return;
     }
@@ -131,11 +148,11 @@ function GameSession({ playerId }) {
 
   const handleJoinRoom = async (roomCode) => {
     if (!playerId) {
-      throw new Error('You must be logged in before joining a room.');
+      throw new Error("You must be logged in before joining a room.");
     }
 
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       startMatch(await joinRoom({ roomCode: roomCode.trim() }));
@@ -147,19 +164,39 @@ function GameSession({ playerId }) {
     }
   };
 
+  const handleOpenRoom = async (roomCode) => {
+    setLoading(true);
+    setError("");
+
+    try {
+      startMatch(await getRoomStatus(roomCode));
+    } catch (requestError) {
+      setError(requestError.message);
+      throw requestError;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (waitingMatch && !matchData) {
-    return <WaitingRoom roomCode={waitingMatch.roomCode} message="Waiting for an opponent" />;
+    return (
+      <WaitingRoom
+        roomCode={waitingMatch.roomCode}
+        message="Waiting for an opponent"
+      />
+    );
   }
 
   if (!matchData && !sharedResult) {
     return (
       <Dashboard
         onJoinRoom={handleJoinRoom}
+        onOpenRoom={handleOpenRoom}
         joinRoomLoading={loading}
         joinRoomError={error}
         onCreateRoom={async ({ categoryName, roomType }) => {
           setLoading(true);
-          setError('');
+          setError("");
 
           try {
             startMatch(await createRoom({ categoryName, roomType }));
@@ -210,19 +247,30 @@ function GameSession({ playerId }) {
     setFinalScore(score);
 
     try {
-      const response = await submitScore({ matchId: matchData._id, score });
+      const response = await submitScore({
+        matchId: matchData._id,
+        score,
+      });
 
-      if (response.data.status === 'Completed') {
+      if (response.data.status === "Completed") {
         setCompletedMatch(response.data);
-        setStage('result');
+        setStage("result");
       } else {
-        setStage('waiting');
+        setStage("waiting");
       }
     } catch (requestError) {
       setError(requestError.message);
-      setStage('waiting');
+      setStage("waiting");
     }
   };
+
+  const currentPlayer = matchData.players?.find(
+    (player) => String(player._id || player) === String(playerId)
+  );
+
+  const opponent = matchData.players?.find(
+    (player) => String(player._id || player) !== String(playerId)
+  );
 
   return (
     <div className="duel-app quiz-page">
@@ -241,13 +289,16 @@ function GameSession({ playerId }) {
         </div>
       </header>
 
-      {stage === 'quiz' ? (
-        <QuizScreen questions={matchData.questions} onFinish={handleFinish} />
-      ) : stage === 'waiting' ? (
+      {stage === "quiz" ? (
+        <QuizScreen
+          questions={matchData.questions}
+          onFinish={handleFinish}
+        />
+      ) : stage === "waiting" ? (
         <ResultScreen
           finalScore={finalScore}
           totalPossible={matchData.questions.length * 10}
-          playerName={matchData.players?.find((player) => String(player._id || player) === String(playerId))?.username || 'Champion'}
+          playerName={currentPlayer?.username || "Champion"}
           resultPending
           onRestart={() => window.location.reload()}
         />
@@ -255,8 +306,15 @@ function GameSession({ playerId }) {
         <ResultScreen
           finalScore={finalScore}
           totalPossible={matchData.questions.length * 10}
-          playerName={matchData.players?.find((player) => String(player._id || player) === String(playerId))?.username || 'Champion'}
-          resultWinner={completedMatch ? (completedMatch.winner ? String(completedMatch.winner) === String(playerId) : null) : undefined}
+          playerName={currentPlayer?.username || "Champion"}
+          resultWinner={
+            completedMatch
+              ? completedMatch.winner
+                ? String(completedMatch.winner) === String(playerId)
+                : null
+              : undefined
+          }
+          opponentUsername={opponent?.username}
           onRestart={() => window.location.reload()}
         />
       )}
@@ -266,23 +324,67 @@ function GameSession({ playerId }) {
 
 const ProtectedRoute = ({ children }) => {
   const token = getAuthToken();
+
   if (!token) {
     return <Navigate to="/login" replace />;
   }
+
   return children;
 };
 
 function App() {
+  useEffect(() => {
+    const syncSocketAuthentication = (event) => {
+      if (!event || event.key === "skillDuelsToken") {
+        connectSocket(localStorage.getItem("skillDuelsToken"));
+      }
+    };
+
+    syncSocketAuthentication();
+    window.addEventListener("storage", syncSocketAuthentication);
+
+    return () => {
+      window.removeEventListener("storage", syncSocketAuthentication);
+    };
+  }, []);
+
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/leaderboard" element={<Leaderboard />} />
-      <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
-      <Route path="/" element={<ProtectedRoute><GameContainer /></ProtectedRoute>} />
-      <Route path="/dashboard" element={<ProtectedRoute><GameContainer /></ProtectedRoute>} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <FriendNotifications />
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <GameContainer />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <GameContainer />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 }
 
