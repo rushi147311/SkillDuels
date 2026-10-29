@@ -1,30 +1,31 @@
+
 import { useEffect, useState } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
+import { connectSocket } from "./services/socket";
+import { clearAuthToken, getAuthToken } from "./services/authSession";
 
 import QuizScreen from "./pages/QuizScreen";
 import ResultScreen from "./pages/ResultScreen";
 import Dashboard from "./pages/Dashboard";
 import WaitingRoom from "./components/WaitingRoom";
 import Leaderboard from "./pages/Leaderboard";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail";
+import AdminPage from "./pages/adminPage/AdminPage.jsx";
+import LogoutButton from "./components/LogoutButton";
+import FriendNotifications from "./components/FriendNotifications";
 
 import {
   createRoom,
+  getCurrentUser,
   getRoomStatus,
   joinRoom,
   submitScore,
 } from "./services/api";
-
-const getPlayerId = () => {
-  const savedId = window.localStorage.getItem("skillDuelsPlayerId");
-
-  if (savedId) return savedId;
-
-  const playerId = crypto.randomUUID().replaceAll("-", "").slice(0, 24);
-
-  window.localStorage.setItem("skillDuelsPlayerId", playerId);
-
-  return playerId;
-};
 
 const getSharedResult = () => {
   const params = new URLSearchParams(window.location.search);
@@ -46,6 +47,46 @@ const getSharedResult = () => {
 };
 
 function GameContainer() {
+  const [playerId, setPlayerId] = useState(null);
+
+  useEffect(() => {
+    const token = getAuthToken();
+    if (!token) return undefined;
+
+    let active = true;
+
+    getCurrentUser()
+      .then((response) => {
+        if (!active) return;
+
+        const authenticatedPlayerId = response?.data?._id;
+
+        if (!authenticatedPlayerId) {
+          throw new Error("Authenticated user info was not returned.");
+        }
+
+        setPlayerId(authenticatedPlayerId);
+      })
+      .catch(() => {
+        if (!active) return;
+
+        clearAuthToken();
+        window.location.href = "/login";
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (!playerId) {
+    return <div className="dashboard-loading">Loading your account...</div>;
+  }
+
+  return <GameSession key={playerId} playerId={playerId} />;
+}
+
+function GameSession({ playerId }) {
   const [stage, setStage] = useState("quiz");
   const [matchData, setMatchData] = useState(null);
   const [waitingMatch, setWaitingMatch] = useState(null);
@@ -55,14 +96,12 @@ function GameContainer() {
   const [loading, setLoading] = useState(false);
   const [sharedResult] = useState(getSharedResult);
 
-  const playerId = getPlayerId();
-
   useEffect(() => {
     const roomToPoll =
       waitingMatch?.roomCode ||
       (stage === "waiting" ? matchData?.roomCode : null);
 
-    if (!roomToPoll) return undefined;
+    if (!roomToPoll || !playerId) return undefined;
 
     const checkRoom = async () => {
       try {
@@ -86,11 +125,10 @@ function GameContainer() {
     };
 
     checkRoom();
-
     const interval = setInterval(checkRoom, 2000);
 
     return () => clearInterval(interval);
-  }, [matchData, stage, waitingMatch]);
+  }, [matchData, stage, waitingMatch, playerId]);
 
   const startMatch = (response) => {
     const match = response.data;
@@ -101,23 +139,37 @@ function GameContainer() {
 
     if (match.status === "Pending") {
       setWaitingMatch(match);
-    } else {
-      setMatchData(match);
-      setWaitingMatch(null);
+      return;
     }
+
+    setMatchData(match);
+    setWaitingMatch(null);
   };
 
   const handleJoinRoom = async (roomCode) => {
+    if (!playerId) {
+      throw new Error("You must be logged in before joining a room.");
+    }
+
     setLoading(true);
     setError("");
 
     try {
-      startMatch(
-        await joinRoom({
-          playerId,
-          roomCode: roomCode.trim(),
-        })
-      );
+      startMatch(await joinRoom({ roomCode: roomCode.trim() }));
+    } catch (requestError) {
+      setError(requestError.message);
+      throw requestError;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenRoom = async (roomCode) => {
+    setLoading(true);
+    setError("");
+
+    try {
+      startMatch(await getRoomStatus(roomCode));
     } catch (requestError) {
       setError(requestError.message);
       throw requestError;
@@ -138,8 +190,8 @@ function GameContainer() {
   if (!matchData && !sharedResult) {
     return (
       <Dashboard
-        playerId={playerId}
         onJoinRoom={handleJoinRoom}
+        onOpenRoom={handleOpenRoom}
         joinRoomLoading={loading}
         joinRoomError={error}
         onCreateRoom={async ({ categoryName, roomType }) => {
@@ -147,13 +199,7 @@ function GameContainer() {
           setError("");
 
           try {
-            startMatch(
-              await createRoom({
-                playerId,
-                categoryName,
-                roomType,
-              })
-            );
+            startMatch(await createRoom({ categoryName, roomType }));
           } catch (requestError) {
             setError(requestError.message);
             throw requestError;
@@ -172,13 +218,16 @@ function GameContainer() {
       <div className="duel-app quiz-page">
         <header className="topbar">
           <div className="brand">
-            <span className="brand-mark">⚡</span>
+            <span className="brand-mark">?</span>
             Skill<span>Duels</span>
           </div>
 
-          <div className="live-pill">
-            <span />
-            Shared result
+          <div className="topbar-actions">
+            <div className="live-pill">
+              <span />
+              Shared result
+            </div>
+            <LogoutButton className="logout-button" />
           </div>
         </header>
 
@@ -200,7 +249,6 @@ function GameContainer() {
     try {
       const response = await submitScore({
         matchId: matchData._id,
-        playerId,
         score,
       });
 
@@ -212,20 +260,32 @@ function GameContainer() {
       }
     } catch (requestError) {
       setError(requestError.message);
+      setStage("waiting");
     }
   };
+
+  const currentPlayer = matchData.players?.find(
+    (player) => String(player._id || player) === String(playerId)
+  );
+
+  const opponent = matchData.players?.find(
+    (player) => String(player._id || player) !== String(playerId)
+  );
 
   return (
     <div className="duel-app quiz-page">
       <header className="topbar">
         <div className="brand">
-          <span className="brand-mark">⚡</span>
+          <span className="brand-mark">?</span>
           Skill<span>Duels</span>
         </div>
 
-        <div className="live-pill">
-          <span />
-          Live match
+        <div className="topbar-actions">
+          <div className="live-pill">
+            <span />
+            Live match
+          </div>
+          <LogoutButton className="logout-button" />
         </div>
       </header>
 
@@ -235,19 +295,18 @@ function GameContainer() {
           onFinish={handleFinish}
         />
       ) : stage === "waiting" ? (
-        <WaitingRoom
-          roomCode={matchData.roomCode}
-          message="Waiting for the other score"
+        <ResultScreen
+          finalScore={finalScore}
+          totalPossible={matchData.questions.length * 10}
+          playerName={currentPlayer?.username || "Champion"}
+          resultPending
+          onRestart={() => window.location.reload()}
         />
       ) : (
         <ResultScreen
           finalScore={finalScore}
           totalPossible={matchData.questions.length * 10}
-          playerName={
-            matchData.players?.find(
-              (player) => player._id === playerId
-            )?.username || "Champion"
-          }
+          playerName={currentPlayer?.username || "Champion"}
           resultWinner={
             completedMatch
               ? completedMatch.winner
@@ -255,6 +314,7 @@ function GameContainer() {
                 : null
               : undefined
           }
+          opponentUsername={opponent?.username}
           onRestart={() => window.location.reload()}
         />
       )}
@@ -262,14 +322,70 @@ function GameContainer() {
   );
 }
 
-function App() {
-  const currentPath = window.location.pathname;
+const ProtectedRoute = ({ children }) => {
+  const token = getAuthToken();
 
-  if (currentPath === "/leaderboard") {
-    return <Leaderboard />;
+  if (!token) {
+    return <Navigate to="/login" replace />;
   }
 
-  return <GameContainer />;
+  return children;
+};
+
+function App() {
+  useEffect(() => {
+    const syncSocketAuthentication = (event) => {
+      if (!event || event.key === "skillDuelsToken") {
+        connectSocket(localStorage.getItem("skillDuelsToken"));
+      }
+    };
+
+    syncSocketAuthentication();
+    window.addEventListener("storage", syncSocketAuthentication);
+
+    return () => {
+      window.removeEventListener("storage", syncSocketAuthentication);
+    };
+  }, []);
+
+  return (
+    <>
+      <FriendNotifications />
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <GameContainer />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <GameContainer />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
+  );
 }
 
 export default App;
