@@ -39,11 +39,21 @@ const getPlayerStats = async () => {
     const player1Score = Number(match.scores?.player1Score);
     const player2Score = Number(match.scores?.player2Score);
 
-    if (!Number.isFinite(player1Score) || !Number.isFinite(player2Score)) {
-      return;
+    const scoresAreValid =
+      match.scores?.player1Score != null &&
+      match.scores?.player2Score != null &&
+      Number.isFinite(player1Score) &&
+      Number.isFinite(player2Score);
+    const declaredWinnerId = match.winner?.toString();
+    let winnerId = [player1Id, player2Id].includes(declaredWinnerId)
+      ? declaredWinnerId
+      : null;
+
+    if (!winnerId && scoresAreValid && player1Score !== player2Score) {
+      winnerId = player1Score > player2Score ? player1Id : player2Id;
     }
 
-    const awardXp = (playerId) => {
+    const recordMatch = (playerId) => {
       const entry = statsByPlayerId.get(playerId) || {
         id: playerId,
         username: `Player ${playerId.slice(-4)}`,
@@ -59,25 +69,17 @@ const getPlayerStats = async () => {
 
       entry.matches += 1;
 
-      if (player1Score === player2Score) {
+      if (winnerId) {
+        const playerWon = winnerId === playerId;
+        if (playerWon) entry.wins += 1;
+        entry.xp += playerWon ? 15 : 5;
+      } else if (scoresAreValid && player1Score === player2Score) {
         entry.xp += 10;
-        return;
-      }
-
-      const playerWon =
-        (playerId === player1Id && player1Score > player2Score) ||
-        (playerId === player2Id && player2Score > player1Score);
-
-      if (playerWon) {
-        entry.wins += 1;
-        entry.xp += 15;
-      } else {
-        entry.xp += 5;
       }
     };
 
-    awardXp(player1Id);
-    awardXp(player2Id);
+    recordMatch(player1Id);
+    if (player2Id !== player1Id) recordMatch(player2Id);
   });
 
   const players = [...statsByPlayerId.values()].map((player) => {
