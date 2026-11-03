@@ -358,7 +358,7 @@ const resetPassword = async (req, res) => {
   }
 };
 
-const login = async (req, res) => {
+const login = async (req, res, requireAdmin = false) => {
   try {
     const { identifier, password } = req.body;
 
@@ -389,6 +389,10 @@ const login = async (req, res) => {
         success: false,
         message: "Invalid credentials.",
       });
+    }
+
+    if (requireAdmin && user.role !== "admin") {
+      return res.status(401).json({ success: false, message: "Invalid credentials." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -433,6 +437,8 @@ const login = async (req, res) => {
   }
 };
 
+const adminLogin = (req, res) => login(req, res, true);
+
 const getCurrentUser = async (req, res) => {
   if (!req.user) {
     return res.status(401).json({
@@ -475,6 +481,7 @@ module.exports = {
   requestPasswordReset,
   resetPassword,
   login,
+  adminLogin,
   logout,
   getCurrentUser,
 };

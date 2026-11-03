@@ -15,6 +15,7 @@ import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
+import AdminLogin from "./pages/AdminLogin";
 import AdminPage from "./pages/adminPage/AdminPage.jsx";
 import LogoutButton from "./components/LogoutButton";
 import FriendNotifications from "./components/FriendNotifications";
@@ -332,6 +333,14 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+const AdminProtectedRoute = ({ children }) => {
+  const token = getAuthToken();
+  const role = localStorage.getItem("skillDuelsUserRole");
+  if (!token) return <Navigate to="/admin/login" replace />;
+  if (role !== "admin") return <Navigate to="/login" replace />;
+  return children;
+};
+
 function App() {
   useEffect(() => {
     const syncSocketAuthentication = (event) => {
@@ -357,13 +366,14 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route
           path="/admin"
           element={
-            <ProtectedRoute>
+            <AdminProtectedRoute>
               <AdminPage />
-            </ProtectedRoute>
+            </AdminProtectedRoute>
           }
         />
         <Route
