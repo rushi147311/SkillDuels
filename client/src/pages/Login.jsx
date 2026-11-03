@@ -29,11 +29,9 @@ export default function Login() {
         // Clear any previous session before saving the new login.
         localStorage.removeItem('skillDuelsToken');
         localStorage.removeItem('skillDuelsPlayerId');
-        localStorage.removeItem('skillDuelsUserRole');
 
         // Use the shared auth helper to keep token handling consistent.
         setAuthToken(response.token);
-        localStorage.setItem('skillDuelsUserRole', response.data?.role || 'user');
 
         // Save the player ID when the API returns it.
         const playerId = response.data?._id;

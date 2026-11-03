@@ -25,13 +25,6 @@ const protect = async (req, res, next) => {
   }
 };
 
-const requireAdmin = (req, res, next) => {
-  if (req.user?.role !== "admin") {
-    return res.status(403).json({ success: false, message: "Administrator access is required." });
-  }
-  return next();
-};
-
 const optionalProtect = async (req, res, next) => {
   const authorization = req.headers.authorization;
   if (!authorization || !authorization.startsWith('Bearer ')) {
@@ -53,4 +46,4 @@ const optionalProtect = async (req, res, next) => {
   }
 };
 
-module.exports = { protect, optionalProtect, requireAdmin };
+module.exports = { protect, optionalProtect };

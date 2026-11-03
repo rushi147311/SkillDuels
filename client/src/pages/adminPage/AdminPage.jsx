@@ -4,7 +4,6 @@ import './AdminPage.css';
 import LogoutButton from '../../components/LogoutButton';
 
 const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/admin`;
-const authConfig = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('skillDuelsToken')}` } });
 
 function AdminPage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -25,7 +24,7 @@ function AdminPage() {
   const [difficulty, setDifficulty] = useState('medium');
 
   const getCategories = useCallback(async () => {
-    const res = await axios.get(`${API_BASE_URL}/categories`, authConfig());
+    const res = await axios.get(`${API_BASE_URL}/categories`);
     return res.data.data || [];
   }, []);
 
@@ -40,7 +39,7 @@ function AdminPage() {
   }, [getCategories]);
 
   const getQuestions = useCallback(async (catId) => {
-    const res = await axios.get(`${API_BASE_URL}/questions/category/${catId}`, authConfig());
+    const res = await axios.get(`${API_BASE_URL}/questions/category/${catId}`);
     return res.data.data || [];
   }, []);
 
@@ -86,7 +85,7 @@ function AdminPage() {
     e.preventDefault();
     if (!categoryName.trim()) return alert('Category name is required');
     try {
-      await axios.post(`${API_BASE_URL}/categories`, { name: categoryName, description: categoryDesc }, authConfig());
+      await axios.post(`${API_BASE_URL}/categories`, { name: categoryName, description: categoryDesc });
       setCategoryName('');
       setCategoryDesc('');
       fetchCategories();
@@ -100,7 +99,7 @@ function AdminPage() {
   const handleDeleteCategory = async (id) => {
     if (!window.confirm('Delete this category?')) return;
     try {
-      await axios.delete(`${API_BASE_URL}/categories/${id}`, authConfig());
+      await axios.delete(`${API_BASE_URL}/categories/${id}`);
       fetchCategories();
     } catch (err) {
       console.error('Error deleting category:', err);
@@ -126,7 +125,7 @@ function AdminPage() {
         options,
         correctAnswer: Number(correctAnswer),
         difficulty
-      }, authConfig());
+      });
       setQuestionText('');
       setOptions(['', '', '', '']);
       fetchQuestions(selectedCatId);
@@ -140,7 +139,7 @@ function AdminPage() {
   const handleDeleteQuestion = async (id) => {
     if (!window.confirm('Delete this question?')) return;
     try {
-      await axios.delete(`${API_BASE_URL}/questions/${id}`, authConfig());
+      await axios.delete(`${API_BASE_URL}/questions/${id}`);
       fetchQuestions(selectedCatId);
     } catch (err) {
       console.error('Error deleting question:', err);
