@@ -93,6 +93,12 @@ export const login = (body) =>
     body: JSON.stringify(body),
   });
 
+export const adminLogin = (body) =>
+  request('/auth/admin-login', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+
 export const logout = () =>
   request('/auth/logout', {
     method: 'POST',

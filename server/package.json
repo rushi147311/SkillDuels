@@ -4,7 +4,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "bootstrap:admin": "node scripts/bootstrapAdmin.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.0",
