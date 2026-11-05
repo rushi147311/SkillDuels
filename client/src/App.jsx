@@ -1,7 +1,9 @@
 
 import { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+
 import "./App.css";
+
 import { connectSocket } from "./services/socket";
 import { clearAuthToken, getAuthToken } from "./services/authSession";
 
@@ -15,6 +17,7 @@ import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
+import AdminLogin from "./pages/AdminLogin";
 import AdminPage from "./pages/adminPage/AdminPage.jsx";
 import LogoutButton from "./components/LogoutButton";
 import FriendNotifications from "./components/FriendNotifications";
@@ -332,6 +335,54 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// Admin access is verified using the backend, not localStorage role.
+const AdminProtectedRoute = ({ children }) => {
+  const [isAdmin, setIsAdmin] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    const verifyAdmin = async () => {
+      if (!getAuthToken()) {
+        if (active) setIsAdmin(false);
+        return;
+      }
+
+      try {
+        const response = await getCurrentUser();
+
+        if (active) {
+          setIsAdmin(response?.data?.role === "admin");
+        }
+      } catch (error) {
+        if (active) {
+          setIsAdmin(false);
+        }
+      }
+    };
+
+    verifyAdmin();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (isAdmin === null) {
+    return (
+      <div className="dashboard-loading">
+        Verifying admin access...
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/admin/login" replace />;
+  }
+
+  return children;
+};
+
 function App() {
   useEffect(() => {
     const syncSocketAuthentication = (event) => {
@@ -351,21 +402,25 @@ function App() {
   return (
     <>
       <FriendNotifications />
+
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
+
         <Route
           path="/admin"
           element={
-            <ProtectedRoute>
+            <AdminProtectedRoute>
               <AdminPage />
-            </ProtectedRoute>
+            </AdminProtectedRoute>
           }
         />
+
         <Route
           path="/"
           element={
@@ -374,6 +429,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/dashboard"
           element={
@@ -382,6 +438,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

@@ -8,6 +8,7 @@ const {
   requestPasswordReset,
   resetPassword,
   login,
+  adminLogin,
   logout,
   getCurrentUser,
 } = require('../controllers/authController');
@@ -27,6 +28,7 @@ router.post('/reset-password', resetPassword);
 
 // Authentication
 router.post('/login', login);
+router.post('/admin-login', adminLogin);
 router.get('/me', protect, getCurrentUser);
 router.post('/logout', protect, logout);
 
