@@ -1,8 +1,8 @@
-
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+
 const {
   sendVerificationEmail,
   sendPasswordResetEmail,
@@ -360,6 +360,16 @@ const resetPassword = async (req, res) => {
 
 const login = async (req, res, requireAdmin = false) => {
   try {
+    // Ensure JWT_SECRET is configured before issuing tokens.
+    if (!process.env.JWT_SECRET) {
+      console.error("JWT_SECRET is missing from environment variables");
+
+      return res.status(500).json({
+        success: false,
+        message: "Server authentication configuration error.",
+      });
+    }
+
     const { identifier, password } = req.body;
 
     if (
@@ -392,7 +402,10 @@ const login = async (req, res, requireAdmin = false) => {
     }
 
     if (requireAdmin && user.role !== "admin") {
-      return res.status(401).json({ success: false, message: "Invalid credentials." });
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials.",
+      });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -417,7 +430,7 @@ const login = async (req, res, requireAdmin = false) => {
         id: user._id,
         tokenVersion: user.tokenVersion,
       },
-      process.env.JWT_SECRET || "default_secret",
+      process.env.JWT_SECRET,
       { expiresIn: "30d" }
     );
 

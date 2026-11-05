@@ -1,7 +1,9 @@
 
 import { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+
 import "./App.css";
+
 import { connectSocket } from "./services/socket";
 import { clearAuthToken, getAuthToken } from "./services/authSession";
 
@@ -333,11 +335,51 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// Admin access is verified using the backend, not localStorage role.
 const AdminProtectedRoute = ({ children }) => {
-  const token = getAuthToken();
-  const role = localStorage.getItem("skillDuelsUserRole");
-  if (!token) return <Navigate to="/admin/login" replace />;
-  if (role !== "admin") return <Navigate to="/login" replace />;
+  const [isAdmin, setIsAdmin] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    const verifyAdmin = async () => {
+      if (!getAuthToken()) {
+        if (active) setIsAdmin(false);
+        return;
+      }
+
+      try {
+        const response = await getCurrentUser();
+
+        if (active) {
+          setIsAdmin(response?.data?.role === "admin");
+        }
+      } catch (error) {
+        if (active) {
+          setIsAdmin(false);
+        }
+      }
+    };
+
+    verifyAdmin();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (isAdmin === null) {
+    return (
+      <div className="dashboard-loading">
+        Verifying admin access...
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/admin/login" replace />;
+  }
+
   return children;
 };
 
@@ -360,6 +402,7 @@ function App() {
   return (
     <>
       <FriendNotifications />
+
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -368,6 +411,7 @@ function App() {
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
+
         <Route
           path="/admin"
           element={
@@ -376,6 +420,7 @@ function App() {
             </AdminProtectedRoute>
           }
         />
+
         <Route
           path="/"
           element={
@@ -384,6 +429,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/dashboard"
           element={
@@ -392,6 +438,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
